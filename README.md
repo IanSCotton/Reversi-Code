@@ -2,7 +2,7 @@
 The overall function of the code is to allow the player to play against or watch different AIs in Reversi.
 
 ## Functions of the code:
-# Pre-game:
+### Pre-game:
 •	The player can choose from a wide array of AIs and themselves who will play as purple (going first) and who will play as yellow (going second), each AI has specific stats and descriptions.
 •	The player can use a slider to decide on the lengths of animations from 0-100 (milliseconds)
 •	The player can click on a button that shows how to play, it has three panels simply explaining the game
