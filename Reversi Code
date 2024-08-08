@@ -1,1 +1,2007 @@
+import copy
+import tkinter as tk
+import random
+from tkinter import *
+from tkinter import font
+
+
+default_animation_timer = 35  # time tile turns black, time to change colour, was 300, 30
+initial_settings = ["Player", "Random"]  # initial game settings
+AI_tree_layers = [4, 4]
+
+# Dropdown menu options
+options = ["Player", "Random", "Tile Maximiser",
+           "Border Controller", "Oracle Maximiser", "Oracle Border", "Cheater"]
+
+all_options = ["player", "Random", "Tile Maximiser", "Border Controller", "Oracle Maximiser",
+               "Oracle Border", "Cheater",
+               "1st Move", "Border Control", "Tile Minimiser", "Max Tile & Border",
+               "Future Maximiser", "Future Border", "Future Border 2"]
+
+
+# text for the associated scores
+options_strength_score = ["?", 1, 4, 5, "find", "find", "Hax",
+                          1, 2, 1, 4, 6, 6, 8]
+options_strategy_score = ["?", 0, 2, 6, 2, 9, "Hax",
+                          1, 4, 1, 4, 5, 6, 8]
+options_tactics_score = ["?", 0, 5, 3, 5, 5, "Hax",
+                         0, 0, 0, 4, 7, 6, 8]
+options_depth_score = ["?", 0, 0, 0, 1, 1, "Hax",  # either 0, 1 or other depending on what it should be filled with
+                       0, 0, 0, 0, 1, 1, 1]         # i.e. if it's a 1 then set it to AI_tree_layers
+
+max_values_strategy = ["", "", "", "", 5, 9]
+max_values_tactics = ["", "", "", "", 8, 10]
+
+options_descriptions = ["Only you can decide your fate",
+                        "Plays a random move each time",
+                        "Will always maximise its tiles",
+                        "Attempts to take control of the borders of the grid",
+                        "Looks into future moves to maximise its tiles",
+                        "Looks into the future to control the borders and win the game",
+                        "If you can't win cheat, if you still can't win cheat some more!",
+                        "Plays the 1st move it sees as it reads across the board",
+                        "Attempts to control the borders (badly)",
+                        "Plays the move that minimises the number of tiles that it has",
+                        "Tries to control the borders whilst maximising its tiles",
+                        "Uses my own method to look into future positions to maximise its tiles",
+                        "Uses my own method to look into future positions to control the border",
+                        "Uses my own method to look into future positions to control the border and maximise tiles"]
+
+
+def set_up_grid(the_board_size):
+
+    # create grid
+    the_grid = [0] * the_board_size
+    for the_row in range(0, the_board_size):
+        # noinspection PyTypeChecker
+        the_grid[the_row] = ["0"] * the_board_size
+
+    # create grid for last turn
+    the_grid_last = copy.deepcopy(the_grid)
+
+    length = int(the_board_size/2)
+
+    # set up the initial position grid[row_][column_]
+    the_grid[length - 1][length - 1] = "B"
+    the_grid[length - 1][length] = "W"
+    the_grid[length][length - 1] = "W"
+    the_grid[length][length] = "B"
+
+    return the_board_size, the_grid, the_grid_last
+
+
+board_size, grid, grid_last = set_up_grid(8)
+
+# if we need to set the position exactly, this is yellow to move, so we'd need to run the_swap(grid)
+'''
+grid = [["B", "B", "B", "B", "B", "B", "B", "B"],
+        ["B", "B", "B", "W", "W", "B", "B", "0"],
+        ["B", "B", "B", "B", "B", "B", "W", "B"],
+        ["B", "B", "B", "W", "B", "B", "B", "B"],
+        ["B", "B", "B", "B", "W", "B", "B", "B"],
+        ["B", "B", "B", "W", "W", "W", "W", "B"],
+        ["0", "B", "W", "W", "W", "W", "0", "B"],
+        ["B", "W", "W", "W", "0", "0", "0", "0"]]
+'''
+
+
+# if it's yellow to move run the swap
+def the_swap(the_grid):
+    for i in range(board_size):
+        for j in range(board_size):
+            if the_grid[i][j] == "W":
+                the_grid[i][j] = "B"
+                continue
+            if the_grid[i][j] == "B":
+                the_grid[i][j] = "W"
+    return the_grid
+
+
+grid = the_swap(grid)  # run this if the 1st player is not playing as black/purple
+
+
+# set of rows and columns to check all squares around tile
+test_columns = [-1, -1, -1, 0, 0, 1, 1, 1]
+test_rows = [-1, 0, 1, -1, 1, -1, 0, 1]
+
+# create array to hold turns and opposite
+turn_tiles = ["B", "W"]
+anti_turn_tiles = ["W", "B"]
+
+colours = ["Purple", "Yellow"]
+
+# set the turn
+turn = 1
+
+# create lists
+ai_strategy = ["Border Control", "Border Control"]  # both updated later
+ai_turn = [True, True]
+
+
+def swap_turn(binary_variable):
+    # swap the turn
+    anti_binary_variable = binary_variable
+    if binary_variable == 1:
+        binary_variable = 0
+    else:
+        binary_variable = 1
+    return binary_variable, anti_binary_variable
+
+
+def move_list_finder(the_grid):
+    move_list = []
+    # get all the legal moves into an array
+    for i in range(0, board_size):
+        for j in range(0, board_size):
+            if the_grid[i][j] == "v":
+                move_list.append([i, j])
+    return move_list
+
+
+def first_move(temp_move_list):
+    return temp_move_list[0][0], temp_move_list[0][1]
+
+
+def random_move(temp_move_list):
+    random_move_number = random.randint(0, len(temp_move_list) - 1)
+    return temp_move_list[random_move_number][0], temp_move_list[random_move_number][1]
+
+
+def border_control(temp_move_list):
+    border_control_test_array = [[32, -20, 10, 10, 10, 10, -20, 32],  # this array shows strength of each move
+                                 [-20, -20, -10, -10, -10, -10, -20, -20],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [-20, -20, -10, -10, -10, -10, -20, -20],
+                                 [32, -20, 10, 10, 10, 10, -20, 32]]
+    quality = []  # create empty array which will be filled with the quality of each move
+    for moves in temp_move_list:  # go through all the possible moves
+        quality.append(border_control_test_array[moves[0]][moves[1]])  # get their strength using the array
+
+    best = 0
+    for i in range(len(quality)):  # go through the list of moves
+        if quality[i] > quality[best]:  # if a move is the best set best to that move number
+            best = i
+
+    best_move_list = []
+    for i in range(len(quality)):
+        if quality[i] == quality[best]:
+            best_move_list.append(temp_move_list[i])
+
+    return best_move_list  # return the best move
+
+
+pairs = [5, 2], [6, 1], [7, 0], [3, 4]  # all pairs of values around square for diagonal
+
+
+# setup: 0: turn's control, 1: opposite turn's control, 2: turn's attack, 3: opposite turn's attack
+# 4: mixed attack, 5: contested (neither can permanently control)
+def control_tile_finder(tile_i, tile_j, protected_grid, the_take, the_grid):  # used in Border Controller
+
+    directions = [False, False, False, False]  # left diagonal, down middle, right diagonal, across middle
+
+    for i in range(board_size):  # for every move about the tile
+        if (tile_i + test_rows[i] > board_size - 1 or tile_j + test_columns[i] > board_size - 1  # check test is in grid
+                or tile_i + test_rows[i] < 0 or tile_j + test_columns[i] < 0):
+            for j in range(len(pairs)):  # if it isn't in the grid then that diagonal is safe
+                if i == pairs[j][0] or i == pairs[j][1]:
+                    directions[j] = True
+            continue
+
+        if protected_grid[tile_i + test_rows[i]][tile_j + test_columns[i]] == the_take:  # if the tile is safe then
+            for j in range(len(pairs)):  # the diagonal is safe
+                if i == pairs[j][0] or i == pairs[j][1]:
+                    directions[j] = True
+
+    for direction in directions:  # if all the directions are not safe return
+        if not direction:
+            return protected_grid
+
+    # the tile is safe if it is that turn's colour, so set it then return
+    if the_grid[tile_i][tile_j] == turn_tiles[the_take]:
+        protected_grid[tile_i][tile_j] = 0 + the_take
+        return protected_grid
+
+    # if both sides would have it permanently if taken make it 4 and return
+    if ((protected_grid[tile_i][tile_j] == 2 and the_take == 1)
+            or (protected_grid[tile_i][tile_j] == 3 and the_take == 0)):
+        protected_grid[tile_i][tile_j] = 4
+        return protected_grid
+
+    # if the tile is already safe for either side return
+    if protected_grid[tile_i][tile_j] == 0 or protected_grid[tile_i][tile_j] == 1:
+        return protected_grid
+
+    protected_grid[tile_i][tile_j] = 2 + the_take  # otherwise it is safe after being taken over
+    return protected_grid
+
+
+def control_grid_finder(the_grid):
+    protected_move_grid = [0] * board_size
+    for columns in range(0, board_size):
+        protected_move_grid[columns] = [5] * board_size
+
+    take = 0
+
+    while True:  # until nothing changes
+        old_board = copy.deepcopy(protected_move_grid)  # create copy of the old board for comparison
+        for rows in range(board_size):  # all the rows
+            for columns in range(board_size):  # all the columns
+                # try the current tile and give it value from 0, 2, 4, 5
+                protected_move_grid = control_tile_finder(rows, columns, protected_move_grid, take, the_grid)
+                # try the same tile for the other side give value from 1, 3, 4, 5
+                protected_move_grid = control_tile_finder(rows, columns, protected_move_grid, swap_turn(take)[0],
+                                                          the_grid)
+                # if nothing has changed then break
+        if protected_move_grid == old_board:
+            break
+
+    return protected_move_grid
+
+
+def border_control_test_2(temp_move_list):  # better version of border_control, tries to maximise safe squares
+
+    protected_move_grid = control_grid_finder(grid)
+
+    for moves in temp_move_list:  # go through every move, play 4 first, then 2, otherwise return move_list
+        if protected_move_grid[moves[0]][moves[1]] == 4:
+            return [moves]
+        if protected_move_grid[moves[0]][moves[1]] == turn + 2:
+            return [moves]
+
+    return temp_move_list
+
+
+def opponent_min_or_max(temp_move_list, max_or_min, the_grid, the_turn):
+    tile_counter_list = []  # get an empty list of hold the number of changed counters
+
+    for moves in temp_move_list:  # go through every move
+        temp_grid = copy.deepcopy(the_grid)  # create a copy of their id
+        i_val = moves[0]
+        j_val = moves[1]
+        temp_grid = grid_changer(i_val, j_val, temp_grid, the_turn)  # play the current move
+
+        tile_counter = 0  # get the number of changed tiles
+        for i in range(0, board_size):
+            for j in range(0, board_size):
+                if temp_grid[i][j] == turn_tiles[the_turn]:
+                    tile_counter = tile_counter + 1
+        tile_counter_list.append(tile_counter)  # add the number of changed tiles to a list
+
+    if max_or_min == "min":
+        # plays the move that takes over the most of the opponent's tiles
+        largest = 0
+        for i in range(len(tile_counter_list)):
+            if tile_counter_list[i] > tile_counter_list[largest]:
+                largest = i
+
+    else:
+        # plays the move that takes over the least of the opponent's tiles
+        largest = 0
+        for i in range(len(tile_counter_list)):
+            if tile_counter_list[i] < tile_counter_list[largest]:
+                largest = i
+
+    return temp_move_list[largest]
+
+
+def create_tree(the_grid, layers):
+    temp_a = turn
+
+    # go down layers times, this creates the tree that needs to be solved
+    game_tree = [[the_grid]]
+    for i in range(1, layers + 1):  # for all the layers
+        game_tree.append([])  # add empty array to fill with the new layer of the tree
+
+        for j in range(len(game_tree[i - 1])):  # for all the grids in the previous layer
+            game_tree[i - 1][j] = legal_moves(game_tree[i - 1][j], temp_a)  # find legal moves on each array
+            temp_move_list = move_list_finder(game_tree[i - 1][j])  # create list of legal moves for each array
+
+            for moves in temp_move_list:  # for all the moves in each grid
+                temp_grid = copy.deepcopy(game_tree[i - 1][j])  # create temporary copy of the above grid
+                temp_grid = grid_changer(moves[0], moves[1], temp_grid, temp_a)  # play the selected move
+                temp_grid[moves[0]][moves[1]] = turn_tiles[temp_a]  # change the tile of the move
+                game_tree[i].append(temp_grid)  # add the new grid to the row
+
+            if not temp_move_list:  # if there are no moves
+                game_tree[i].append(copy.deepcopy(game_tree[i - 1][j]))  # add the current grid to the next layer
+
+        temp_a = swap_turn(temp_a)[0]  # swap the turn
+
+    return game_tree
+
+
+def fill_bottom_tree_maximiser(game_tree, layers):
+    # turn bottom layer to numbers
+    for i in range(len(game_tree[layers])):  # for every tree in layer
+        game_tree[layers][i] = find_score_board_maximiser(game_tree[layers][i])  # get fraction to evaluate board
+
+    return game_tree
+
+
+def solve_tree(game_tree, layers):
+    temp_a = swap_turn(turn)[0]
+
+    # solve the tree
+    for layer_counter in range(0, layers):  # go through all the layers
+        value_along_counter = 0  # get variable to track how far through each layer we are
+
+        for grids in range(0, len(game_tree[layers - layer_counter - 1])):  # go through all the grids in the layer
+            temp_move_list = move_list_finder(game_tree[layers - layer_counter - 1][grids])  # find the moves
+            temp_move_list_length = len(temp_move_list)  # find the length of moves, needed to go through
+            # get tracker for largest and smallest, # initially set to first grid
+            largest, smallest = value_along_counter, value_along_counter
+            for k in range(value_along_counter, value_along_counter + temp_move_list_length):  # go through all moves
+                # find largest and smallest in move_list
+                if game_tree[layers - layer_counter][k] > game_tree[layers - layer_counter][largest]:
+                    largest = k
+                if game_tree[layers - layer_counter][k] < game_tree[layers - layer_counter][smallest]:
+                    smallest = k
+                value_along_counter = value_along_counter + 1
+
+            if len(game_tree[layers - layer_counter]) == 0 or len(
+                    game_tree[layers - layer_counter]) <= largest:
+                continue  # I don't know if this is needed anymore, supposed to prevent going outside array
+
+            if temp_a == 0:  # pick max or min depending on the turn
+                game_tree[layers - layer_counter - 1][grids] = game_tree[layers - layer_counter][
+                    largest]
+            if temp_a == 1:
+                game_tree[layers - layer_counter - 1][grids] = game_tree[layers - layer_counter][
+                    smallest]
+
+        temp_a = swap_turn(temp_a)[0]  # swap the turn to go through the next layer
+
+    # return best move
+    temp_move_list = move_list_finder(grid)  # get list of moves from top grid
+    for i in range(len(game_tree[1])):  # go through all grids created from 1 move from 1st grid
+        if turn == 0:  # if a = 0 return move that gives max
+            if game_tree[1][i] == max(game_tree[1]):
+                return temp_move_list[i]
+        if turn == 1:  # if a = 1 return move that gives min
+            if game_tree[1][i] == min(game_tree[1]):
+                return temp_move_list[i]
+
+
+def future_maximiser_test(layers):
+    game_tree = create_tree(grid, layers)  # create the tree of layer layers
+
+    game_tree = fill_bottom_tree_maximiser(game_tree, layers)  # fill out bottom row of the tree
+
+    return solve_tree(game_tree, layers)  # solve the tree and return the recommended move
+
+
+def fill_bottom_tree_border(game_tree, layers):
+    border_control_test_array = [[32, -20, 10, 10, 10, 10, -20, 32],  # this array shows strength of each move
+                                 [-20, -20, -10, -10, -10, -10, -20, -20],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [10, -10, 0, 0, 0, 0, -10, 10],
+                                 [-20, -20, -10, -10, -10, -10, -20, -20],
+                                 [32, -20, 10, 10, 10, 10, -20, 32]]
+
+    # turn bottom layer to numbers
+    for i in range(len(game_tree[layers])):  # for every tree in layer
+        quality = 0
+        for j in range(board_size):  # go through every tile of the grid (j: rows, k: columns)
+            for k in range(board_size):
+                if game_tree[layers][i][j][k] == turn_tiles[turn]:
+                    quality = quality + border_control_test_array[j][k]
+        game_tree[layers][i] = quality
+
+    return game_tree
+
+
+def future_border_test(layers):
+    game_tree = create_tree(grid, layers)  # create the tree of layer layers
+
+    game_tree = fill_bottom_tree_border(game_tree, layers)  # fill out bottom row of the tree
+
+    return solve_tree(game_tree, layers)  # solve the tree and return the recommended move
+
+
+def fill_bottom_tree_border_2(game_tree, layers):
+    bad_moves_list_i = [0, 0, 1, 1, 1, 1, 6, 6, 6, 6, 7, 7]
+    bad_moves_list_j = [0, 0, 1, 1, 1, 1, 6, 6, 6, 6, 7, 7]
+
+    # turn bottom layer to numbers
+    for i in range(len(game_tree[layers])):  # for every tree in layer
+        protected_move_grid = control_grid_finder(game_tree[layers][i])
+        tree_black_quality = 0  # better if these were 0 and had /0 catcher
+        tree_white_quality = 0
+        for j in range(board_size):  # go through every tile of the grid (j: rows, k: columns)
+            for k in range(board_size):
+                if game_tree[layers][i][j][k] == "B":
+                    tree_black_quality = tree_black_quality + 1
+                    if protected_move_grid[j][k] == 0:
+                        tree_black_quality = tree_black_quality + 100
+                    if i in bad_moves_list_i and j in bad_moves_list_j:
+                        tree_black_quality = tree_black_quality - 6
+                if game_tree[layers][i][j][k] == "W":
+                    tree_white_quality = tree_white_quality + 1
+                    if protected_move_grid[j][k] == 1:
+                        tree_white_quality = tree_white_quality + 100
+                    if i in bad_moves_list_i and j in bad_moves_list_j:
+                        tree_white_quality = tree_white_quality - 6
+        if tree_white_quality == 0:
+            game_tree[layers][i] = 10000
+        else:
+            game_tree[layers][i] = tree_black_quality / tree_white_quality
+
+    return game_tree
+
+
+def future_border_test_2(layers):
+    game_tree = create_tree(grid, layers)  # create the tree of layer layers
+
+    game_tree = fill_bottom_tree_border_2(game_tree, layers)  # fill out bottom row of the tree
+
+    return solve_tree(game_tree, layers)  # solve the tree and return the recommended move
+
+
+def find_score_board_maximiser(the_grid_to_be_evaluated):
+    tree_black_counter = 0  # create list for the number of black tiles
+    tree_total_counter = 0  # create list for the number of white tiles
+    for j in range(board_size):  # go through every tile of the grid (j: rows, k: columns)
+        for k in range(board_size):
+            if the_grid_to_be_evaluated[j][k] == "B":  # check whether the tile is black
+                tree_black_counter = tree_black_counter + 1
+            if the_grid_to_be_evaluated[j][k] == "W" or the_grid_to_be_evaluated[j][k] == "B":
+                tree_total_counter = tree_total_counter + 1
+    return tree_black_counter / tree_total_counter  # get fraction to evaluate board
+
+
+def find_score_border(grid_to_be_evaluated, protected_move_grid):
+    very_bad_moves_ij = [[1, 1], [1, 6], [6, 1], [6, 6]]
+    bad_moves_ij = [[0, 1], [0, 6], [1, 0], [1, 7], [6, 0], [6, 7], [7, 1], [7, 6]]
+
+    if not protected_move_grid:
+        protected_move_grid = control_grid_finder(grid_to_be_evaluated)
+    grid_black_quality = 0
+    grid_white_quality = 0
+
+    grid_black_counter = 0
+    grid_white_counter = 0
+    for i in range(board_size):  # go through every tile of the grid (j: rows, k: columns) and assign scores
+        for j in range(board_size):
+            if grid_to_be_evaluated[i][j] == "B":
+                grid_black_quality = grid_black_quality + 1
+                grid_black_counter = grid_black_counter + 1
+                if protected_move_grid[i][j] == 0:
+                    grid_black_quality = grid_black_quality + 100  # if the tile is protected
+                if [i, j] in very_bad_moves_ij:  # if it is one of the dangerous diagonal tiles
+                    grid_black_quality = grid_black_quality - 50
+                if [i, j] in bad_moves_ij:  # if it is one of the dangerous edge tiles
+                    grid_black_quality = grid_black_quality - 2
+                if i == 0 or i == 7 or j == 0 or j == 7:
+                    grid_black_quality = grid_black_quality + 1  # prefers tiles on the border
+
+            if grid_to_be_evaluated[i][j] == "W":
+                grid_white_quality = grid_white_quality + 1
+                grid_white_counter = grid_white_counter + 1
+                if protected_move_grid[i][j] == 1:
+                    grid_white_quality = grid_white_quality + 100
+                if [i, j] in very_bad_moves_ij:
+                    grid_white_quality = grid_white_quality - 50
+                if [i, j] in bad_moves_ij:
+                    grid_white_quality = grid_white_quality - 2
+                if i == 0 or i == 7 or j == 0 or j == 7:
+                    grid_white_quality = grid_white_quality + 1
+
+    score = grid_black_quality - grid_white_quality
+
+    if grid_black_counter + grid_white_counter >= (board_size**2 - 4):  # near the end just count the number of tiles
+        score = grid_black_counter / grid_white_counter
+
+    return score
+
+
+class EvaluationGrids:  # create class called EvaluationGrids
+    # each object of this class contains: itself, it's grid, it's depth (how far from the initial grid),
+    # the turn and the target depth
+    def __init__(self, its_grid, depth, the_turn,
+                 target_depth, setting):
+        self.grid = legal_moves(its_grid, the_turn)  # update the internal grid with all the legal moves
+        self.turn = the_turn  # add the turn
+        self.depth = depth  # add the depth
+        self.setting = setting  # add the settings
+        if setting == "border":
+            self.protected_move_grid = control_grid_finder(self.grid)
+        else:
+            self.protected_move_grid = None
+
+        if not self.protected_move_grid and setting == "border":
+            self.protected_move_grid = control_grid_finder(self.grid)
+
+        if depth != target_depth:  # get sorted list of moves and stuff for lower grids
+            if setting == "border":
+                self.under_grid_grids, self.moves = sort_moves(self)
+            else:
+                self.under_grid_grids, self.moves = sort_maximiser_moves(self)
+
+        self.evaluation = False
+        if depth == target_depth:  # if we've reached the target_depth
+            self.evaluation = evaluation_functions(self.setting, self)  # add the evaluation
+        else:
+            under_grids = ["empty"] * len(self.moves)  # create empty array
+            self.under_grids = under_grids  # set the under_grid to the entire list
+
+
+def sort_maximiser_moves(evaluation_grid):  # just finds under_grids
+
+    moves_list = move_list_finder(evaluation_grid.grid)
+
+    lower_grids = []
+
+    for moves in moves_list:
+        lower_grid = copy.deepcopy(evaluation_grid.grid)
+        lower_grid = grid_changer(moves[0], moves[1],
+                                  lower_grid, evaluation_grid.turn)
+        lower_grids.append(lower_grid)
+
+    return lower_grids, moves_list
+
+
+def sort_moves(evaluation_grid):
+    # order the moves in the list of best to worst
+
+    class Moves:
+        def __init__(self, its_move, current_grid, the_turn):
+            self.its_move = its_move
+            self.the_turn = the_turn
+            lower_grid = copy.deepcopy(current_grid)
+            lower_grid = grid_changer(self.its_move[0], self.its_move[1],
+                                      lower_grid, self.the_turn)
+            self.lower_grid = lower_grid
+            self.score = find_score_board_maximiser(self.lower_grid)
+
+    temp_moves_list = move_list_finder(evaluation_grid.grid)  # add all the possible moves
+
+    move_list = [[], [], []]
+    for move in temp_moves_list:
+
+        score = evaluation_grid.protected_move_grid[move[0]][move[1]]
+
+        if score == 4:
+            move_list[0].append(Moves(move, evaluation_grid.grid, evaluation_grid.turn))
+        if score == 2 + evaluation_grid.turn:
+            move_list[1].append(Moves(move, evaluation_grid.grid, evaluation_grid.turn))
+        if score == 5 or score == 2 + swap_turn(evaluation_grid.turn)[0]:
+            move_list[2].append(Moves(move, evaluation_grid.grid, evaluation_grid.turn))
+
+    the_range = 3
+    list_counter = 0
+    while list_counter < len(move_list):
+        if not move_list[list_counter]:
+            del move_list[list_counter]
+            list_counter = list_counter - 1
+            the_range = the_range - 1
+        list_counter = list_counter + 1
+
+    under_grid_grids = []
+    sorted_moves = []
+
+    for list_counter in range(the_range):  # create new list ordered from largest to smallest score
+
+        sorted_move_list = []
+        original_length = len(move_list[list_counter])
+
+        while True:
+
+            largest_move = -1000000
+            largest_idx = -1
+
+            for idx, move in enumerate(move_list[list_counter]):
+                if largest_move < move.score:
+                    largest_move = move.score
+                    largest_idx = idx
+
+            if largest_idx > -1:
+                sorted_move_list.append(move_list[list_counter][largest_idx])
+                del move_list[list_counter][largest_idx]
+
+            if len(sorted_move_list) == original_length:
+                for move in sorted_move_list:
+                    under_grid_grids.append(move.lower_grid)
+                    sorted_moves.append(move.its_move)
+
+                break
+
+    return under_grid_grids, sorted_moves
+
+
+def evaluation_functions(setting, evaluation_grid):
+    if setting == "maximiser":
+        return find_score_board_maximiser(evaluation_grid.grid)
+    if setting == "border":
+        return find_score_border(evaluation_grid.grid, evaluation_grid.protected_move_grid)
+
+
+def min_max(evaluation_grid, max_depth, alpha, beta, layers):
+
+    if evaluation_grid.depth == max_depth:
+        return evaluation_grid.evaluation
+
+    if evaluation_grid.turn == 0:  # we are minimising
+        max_value = -1000000
+        # go through grids in test.under_grids and give index (idx) to each
+        for idx, sub_grid in enumerate(evaluation_grid.under_grids):
+            if sub_grid == "empty":
+                evaluation_grid.under_grids[idx] = EvaluationGrids(evaluation_grid.under_grid_grids[idx],
+                                                                   evaluation_grid.depth + 1,
+                                                                   swap_turn(evaluation_grid.turn)[0], layers,
+                                                                   evaluation_grid.setting)  # change grid
+                sub_grid = evaluation_grid.under_grids[idx]  # get the new sub_grid
+
+            if not sub_grid.evaluation:  # if the sub grid has no evaluation
+                min_max(sub_grid, max_depth, alpha, beta, layers)  # go to a lower sub_grid
+
+            evaluation = sub_grid.evaluation
+            max_value = max(max_value, evaluation)
+            alpha = max(alpha, evaluation)
+            if beta <= alpha:
+                break
+
+        evaluation_grid.evaluation = max_value
+    else:
+        min_value = 1000000
+        for idx, sub_grid in enumerate(
+                evaluation_grid.under_grids):  # go through grids in test.under_grids and give index (idx) to each
+            if sub_grid == "empty":
+                evaluation_grid.under_grids[idx] = EvaluationGrids(evaluation_grid.under_grid_grids[idx],
+                                                                   evaluation_grid.depth + 1,
+                                                                   swap_turn(evaluation_grid.turn)[0], layers,
+                                                                   evaluation_grid.setting)  # change grid
+                sub_grid = evaluation_grid.under_grids[idx]  # get the new sub_grid
+
+            if not sub_grid.evaluation:
+                min_max(sub_grid, max_depth, alpha, beta, layers)
+
+            evaluation = sub_grid.evaluation
+            min_value = min(min_value, evaluation)
+            beta = min(min_value, beta)
+            if beta <= alpha:
+                break
+        evaluation_grid.evaluation = min_value
+
+
+def find_move(evaluation_grid):
+
+    for idx, under_grid in enumerate(evaluation_grid.under_grids):
+
+        if under_grid.evaluation == evaluation_grid.evaluation:
+            return evaluation_grid.moves[idx]
+
+
+def cheater_code(temp_move_list):
+
+    move = [-2, -2]  # do no specific move unless otherwise changed
+
+    global grid
+
+    # count the squares
+    tile_counter = 0
+    for i in range(board_size):
+        for j in range(board_size):
+            if grid[i][j] in turn_tiles:
+                tile_counter = tile_counter + 1
+
+    def all_placer():
+        # places a tile on every possible move
+        for moves in temp_move_list:
+            move_i, move_j = moves[0], moves[1]
+            grid[move_i][move_j] = turn_tiles[turn]
+        return grid
+
+    def place_square():
+        # places a square of tiles of varying size on the board
+        square_size = 0  # to make python happy :)
+        r_square_number = random.randint(0, 10)
+        if r_square_number <= 6:
+            square_size = 2
+        if 6 < r_square_number <= 9:
+            square_size = 3
+        if r_square_number == 10:
+            square_size = 4
+
+        place_i = random.randint(0, board_size - square_size)
+        place_j = random.randint(0, board_size - square_size)
+
+        for rows in range(square_size):
+            for columns in range(square_size):
+                grid[place_i + rows][place_j + columns] = turn_tiles[turn]
+
+        return grid
+
+    def flip_straight():  # swaps all the tiles on a row or column
+
+        while True:  # until something changes
+
+            old_grid = copy.deepcopy(grid)  # create copy to check against later
+
+            chosen_row = random.randint(0, board_size - 1)  # choose the row/column number
+
+            r_number = random.randint(0, 1)  # choose whether it will be a row or column
+
+            row_or_not = swap_turn(r_number)  # swap the turn
+
+            for a in range(board_size):
+
+                tile_i = chosen_row * row_or_not[0] + a * row_or_not[1]
+
+                tile_j = chosen_row * row_or_not[1] + a * row_or_not[0]
+
+                if grid[tile_i][tile_j] == turn_tiles[turn]:
+                    grid[tile_i][tile_j] = turn_tiles[swap_turn(turn)[0]]
+                    continue
+
+                if grid[tile_i][tile_j] == turn_tiles[swap_turn(turn)[0]]:
+                    grid[tile_i][tile_j] = turn_tiles[turn]
+
+            if old_grid != grid:  # if something has actually changed
+                return grid
+
+    def smiley_face(the_grid, the_turn):
+
+        # create the array of patterns
+        smiley_array = [[["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "B", "B", "0", "0", "B", "B", "0"],
+                         ["0", "B", "B", "0", "0", "B", "B", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "B", "0", "0", "0", "0", "B", "0"],
+                         ["0", "0", "B", "B", "B", "B", "0", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"]], [["0", "0", "B", "0", "0", "B", "0", "0"],
+                                                                     ["0", "0", "0", "0", "0", "0", "0", "0"],
+                                                                     ["0", "B", "0", "0", "0", "0", "B", "0"],
+                                                                     ["0", "0", "B", "0", "0", "B", "0", "0"],
+                                                                     ["0", "0", "0", "0", "0", "0", "0", "0"],
+                                                                     ["0", "0", "0", "0", "0", "0", "0", "0"],
+                                                                     ["0", "0", "0", "0", "0", "0", "0", "0"],
+                                                                     ["0", "0", "0", "0", "0", "0", "0", "0"]],
+                        [["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "0", "B", "0", "0", "B", "0", "0"],
+                         ["0", "B", "0", "0", "0", "0", "B", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "0", "0", "0", "0", "0", "0", "0"],
+                         ["0", "0", "B", "B", "B", "B", "0", "0"],
+                         ["0", "B", "0", "0", "0", "0", "B", "0"]], [["B", "0", "0", "0", "0", "0", "0", "W"],
+                                                                     ["0", "B", "0", "0", "0", "0", "W", "0"],
+                                                                     ["0", "0", "B", "0", "0", "W", "0", "0"],
+                                                                     ["0", "0", "0", "B", "W", "0", "0", "0"],
+                                                                     ["0", "0", "0", "W", "B", "0", "0", "0"],
+                                                                     ["0", "0", "W", "0", "0", "B", "0", "0"],
+                                                                     ["0", "W", "0", "0", "0", "0", "B", "0"],
+                                                                     ["W", "0", "0", "0", "0", "0", "0", "B"]],
+                        [["0", "0", "B", "W", "B", "W", "0", "0"],
+                         ["0", "W", "0", "0", "0", "0", "B", "0"],
+                         ["B", "0", "0", "0", "0", "0", "0", "W"],
+                         ["W", "0", "0", "0", "0", "0", "0", "B"],
+                         ["B", "0", "0", "0", "0", "0", "0", "W"],
+                         ["W", "0", "0", "0", "0", "0", "0", "B"],
+                         ["0", "B", "0", "0", "0", "0", "W", "0"],
+                         ["0", "0", "W", "B", "W", "B", "0", "0"]]]
+
+        ''' if I want to add another one
+        smiley_array.append([["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"],
+                             ["0", "0", "0", "0", "0", "0", "0", "0"]])
+        '''
+        chosen_smiley = ""  # to make python happy :)
+        r_smiley = random.randint(0, 1)  # each with 1/2 odds it makes a pattern or all moves
+        if r_smiley == 0:  # plays the pattern
+            chosen_smiley = smiley_array[r_smiley]
+        if r_smiley == 1:  # plays all moves
+            the_grid = all_placer()
+            return the_grid, move
+
+        if turn_tiles[the_turn] == "W":  # if it's white's turn we need to swap the tiles around
+            chosen_smiley = the_swap(chosen_smiley)
+
+        for rows in range(board_size):  # go through all of both grids
+            for columns in range(board_size):  # if there is a difference, and it matters (i.e. it isn't a 0)
+                if (the_grid[rows][columns] != chosen_smiley[rows][columns]) and (chosen_smiley[rows][columns] != "0"):
+                    the_grid[rows][columns] = chosen_smiley[rows][columns]  # then change the grid
+
+        return the_grid, move
+
+    # if it's the cheater's 1st turn (unless there are 2 cheaters)
+    if (tile_counter == 4 and "B" == turn_tiles[0]) or (tile_counter == 5 and "W" == turn_tiles[1]):
+        grid, move = smiley_face(grid, turn)
+        return move
+
+    random_number = random.randint(0, 61)  # choose how they cheat
+
+    if 0 <= random_number <= 29:  # place a tile on every possible move (doesn't update surrounding squares)
+        if len(temp_move_list) > 3:
+            move = random_move(temp_move_list)
+
+    if 30 < random_number <= 60:  # place a square of size 2-4 somewhere on the grid
+        grid = place_square()
+
+    if random_number == 61:  # flip every tile on the grid very rarely
+        grid = the_swap(grid)
+
+    random_number_2 = random.randint(0, 4)
+    if random_number_2 == 4:  # flip all the tiles on a column or row
+        grid = flip_straight()
+
+    return move  # return the move, if it's still [-2, -2] no move is "played" i.e. adjacent tiles are untouched
+
+
+def ai_player(setting, layers, the_grid, the_turn):
+
+    move_list = move_list_finder(the_grid)  # get all the legal moves
+    if not move_list:  # if there aren't any moves, play the moves outside the grid
+        return [-2, -2]
+
+    if len(move_list) == 1 and setting != "Cheater":
+        return move_list[0]
+
+    if setting == "1st Move":  # if the strategy is "1st Move" play the 1st move on the move list:
+        return first_move(move_list)
+
+    if setting == "Random":  # if the strategy is "1st Move" play a random move on the move list:
+        return random_move(move_list)
+
+    if setting == "Border Control":  # if the strategy is "border_control" play the "best" move on the move list:
+        best_move_list = border_control(move_list)
+        return first_move(best_move_list)  # return the best move
+
+    if setting == "Border Controller":  # if the strategy is "border_control" play the "best" move on the move list:
+        move_list = border_control_test_2(move_list)
+        move_list = border_control(move_list)
+        return first_move(move_list)  # return the best move
+
+    # if the strategy is "Tile Maximiser" minimise the opponent's tiles, otherwise maximises:
+    if setting == "Tile Maximiser":
+        return opponent_min_or_max(move_list, "min", the_grid, the_turn)  # as min tiles they have
+
+    # if the strategy is "Tile Maximiser" minimise the opponent's tiles, otherwise maximises:
+    if setting == "Tile Minimiser":
+        return opponent_min_or_max(move_list, "max", the_grid, the_turn)  # as maximises tiles they have
+
+    if setting == "Max Tile & Border":  # play "best" move that maximises tiles
+        best_move_list = border_control(move_list)
+        return opponent_min_or_max(best_move_list, "min", the_grid, the_turn)  # return the best move
+
+    if setting == "Future Maximiser":
+        return future_maximiser_test(layers)
+
+    if setting == "Future Border":
+        return future_border_test(layers)
+
+    if setting == "Future Border 2":
+        return future_border_test_2(layers)
+
+    if setting == "Oracle Maximiser":
+        test_grid = EvaluationGrids(grid, 0, turn, layers, "maximiser")
+        min_max(test_grid, layers, -1000000, 1000000, layers)
+        return find_move(test_grid)
+
+    if setting == "Oracle Border":
+        test_grid = EvaluationGrids(grid, 0, turn, layers, "border")
+        min_max(test_grid, layers, -1000000, 1000000, layers)
+        return find_move(test_grid)
+
+    if setting == "Cheater":
+        return cheater_code(move_list)
+
+
+# this takes a move and runs function needed to play it
+def play_move(i_val, j_val, legal_moves_check, animation_timer):
+    # runs updater, which plays moves and finds legal moves
+    legal_moves_check, white_counter, black_counter, move_i, move_j, difference, difference_i, difference_j = (
+        updater(i_val, j_val, legal_moves_check))
+
+    if not legal_moves_check:  # if there are no new legal moves
+        legal_moves_check, white_counter, black_counter, move_i, move_j, difference, difference_i, difference_j = (
+            updater(-2, -2, legal_moves_check))  # this basically passes the turn
+    printer(legal_moves_check, white_counter, black_counter,
+            move_i, move_j,
+            difference, difference_i, difference_j,
+            animation_timer)
+
+
+def grid_changer(i_val, j_val, the_grid, turn_counter):
+    # This section updates all the nearby cells
+    for k in range(0, len(test_rows)):  # all combinations around cell:
+        # check the checked cell is inside grid and of the opposite colour
+        if (j_val + test_columns[k] < 0) or (j_val + test_columns[k] > board_size - 1) \
+                or (i_val + test_rows[k] < 0) or (i_val + test_rows[k] > board_size - 1) \
+                or the_grid[i_val + test_rows[k]][j_val + test_columns[k]] != anti_turn_tiles[turn_counter]:
+            continue
+
+        for tiles in range(2, board_size + 2):  # check square is inside grid
+            if (j_val + tiles * test_columns[k] < 0) or (j_val + tiles * test_columns[k] > board_size - 1) \
+                    or (i_val + tiles * test_rows[k] < 0) or (i_val + tiles * test_rows[k] > board_size - 1) \
+                    or the_grid[i_val + tiles * test_rows[k]][j_val + tiles * test_columns[k]] == "0" \
+                    or the_grid[i_val + tiles * test_rows[k]][j_val + tiles * test_columns[k]] == "v":
+                break
+            # check at least 1 future square in the direction is the right colour
+            if the_grid[i_val + tiles * test_rows[k]][j_val + tiles * test_columns[k]] != turn_tiles[
+                                                                    turn_counter]:  # if the tile is the wrong colour
+                continue
+            for m in range(1, tiles):  # change the colour of squares
+                if the_grid[i_val + m * test_rows[k]][j_val + m * test_columns[k]] != anti_turn_tiles[
+                                                            turn_counter]:  # if the tile is not the opposite colour
+                    break
+                the_grid[i_val + m * test_rows[k]][j_val + m * test_columns[k]] = turn_tiles[
+                    turn_counter]  # change colour of tile
+
+    if (i_val > -1) and (i_val < board_size) and (j_val > -1) and (j_val < board_size):
+        the_grid[i_val][j_val] = turn_tiles[turn_counter]
+
+    return the_grid
+
+
+def legal_move_of_cell(the_grid, turn_a, i, j):  # input a cell, find if it can be played in
+    for k in range(0, len(test_rows)):  # all combinations around cell:
+        # check cell is "v", inside the the_grid and adjacent square is the correct colour
+        if the_grid[i][j] == "B" or the_grid[i][j] == "W" or \
+                (j + test_columns[k] < 0) or (j + test_columns[k] > board_size - 1) \
+                or (i + test_rows[k] < 0) or (i + test_rows[k] > board_size - 1) or \
+                the_grid[i + test_rows[k]][j + test_columns[k]] != anti_turn_tiles[turn_a]:
+            continue
+        for tiles in range(2, 12):
+            # check square is inside the_grid and at least 1 future square in the direction is the right colour
+            if (j + tiles * test_columns[k] < 0) or (j + tiles * test_columns[k] > board_size - 1) \
+                    or (i + tiles * test_rows[k] < 0) or (i + tiles * test_rows[k] > board_size - 1) \
+                    or the_grid[i + tiles * test_rows[k]][j + tiles * test_columns[k]] == "v" or \
+                    the_grid[i + tiles * test_rows[k]][j + tiles * test_columns[k]] == "0":
+                break
+            # check future cell is correct colour
+            if the_grid[i + tiles * test_rows[k]][j + tiles * test_columns[k]] == turn_tiles[turn_a]:
+                the_grid[i][j] = "v"
+                return the_grid
+    return the_grid
+
+
+def legal_moves(the_grid, turn_a):
+    # This section finds all the legal moves
+    for i in range(0, board_size):  # rows
+        for j in range(0, board_size):  # columns
+            # next 2 lines removes all "v"s from the board
+            if the_grid[i][j] == "v":
+                the_grid[i][j] = "0"
+            the_grid = legal_move_of_cell(the_grid, turn_a, i, j)  # check whether the cell can be played in
+    return the_grid
+
+
+def difference_finder(the_grid, the_grid_last):
+    legal_moves_check = False
+
+    white_counter = 0  # set number of black and white counters to 0
+    black_counter = 0
+
+    # create arrays for differences
+    difference_i = []
+    difference_j = []
+    difference = []
+    # checks that there are legal moves
+    for i in range(0, board_size):
+        for j in range(0, board_size):
+            if the_grid[i][j] == "v":
+                legal_moves_check = True
+            if the_grid[i][j] == "W":
+                white_counter = white_counter + 1
+            if the_grid[i][j] == "B":
+                black_counter = black_counter + 1
+            # update difference list
+            if the_grid[i][j] != the_grid_last[i][j] or the_grid[i][j] == "v":
+                difference_i.append(i)
+                difference_j.append(j)
+                difference.append(the_grid[i][j])
+
+    return white_counter, black_counter, difference_i, difference_j, difference, legal_moves_check
+
+
+def updater(i_val, j_val, legal_moves_check):
+    global grid  # import global variables
+    global grid_last
+    global turn
+
+    if legal_moves_check:  # if there were legal moves last time, update the last grid
+        grid_last = copy.deepcopy(grid)
+
+    # run the AI which will create new moves i_val and j_val
+    if ai_turn[turn]:
+        if turn == 0:
+            moves = ai_player(ai_strategy[0], AI_tree_layers[0], grid, turn)  # what AI 1 plays
+        else:
+            moves = ai_player(ai_strategy[1], AI_tree_layers[1], grid, turn)  # what AI 2 plays
+        i_val, j_val = moves  # get the moves
+
+    grid = grid_changer(i_val, j_val, grid, turn)  # updates all the nearby cells with the move
+
+    # if the move is legal, update that square and get values for the move played for printer
+    move_i, move_j = -2, -2  # set move to outside the grid, used if there are no legal moves
+    if 0 <= i_val < board_size:  # check move is legal
+        grid[i_val][j_val] = turn_tiles[turn]  # update the square played on
+        move_i = i_val
+        move_j = j_val
+
+    turn = swap_turn(turn)[0]  # swap the turn
+
+    grid = legal_moves(grid, turn)  # find all the legal moves
+
+    # find the differences between the boards, count number of tiles, check for legal moves
+    (white_counter, black_counter, difference_i,
+     difference_j, difference, legal_moves_check) = difference_finder(grid, grid_last)
+
+    return legal_moves_check, white_counter, black_counter, move_i, move_j, difference, difference_i, difference_j
+
+
+def printer(legal_moves_check, white_counter, black_counter,
+            move_i, move_j,
+            difference, difference_i, difference_j,
+            animation_timer):
+
+    # code to say whose turn it is
+    global turn  # to make python happy :)
+    turn_text = "It is " + colours[turn] + "'s turn"
+
+    # code for when the game ends
+    end = False
+
+    larger, smaller = black_counter, white_counter
+    win_colour = "purple"
+
+    if not legal_moves_check:
+        if white_counter > black_counter:
+            turn_text = "Yellow wins!"
+            end = True
+            # swap the order as yellow won and set colour if yellow wins
+            larger, smaller, win_colour = white_counter, black_counter, "yellow"
+        if black_counter > white_counter and not end:
+            turn_text = "Purple wins!"
+            end = True
+        if not end:
+            turn_text = "It's a draw"
+            win_colour = "grey"
+
+    def play_again_command(master_frame):
+        global grid
+
+        the_board_size, grid, pointless_grid_last = set_up_grid(board_size)  # set up the new grid
+        global turn
+        turn = 0
+        grid = legal_moves(grid, turn)
+
+        print_initially(game_frame_list[2], grid, animation_timer)  # print the initial position
+
+        play_move(-2, -2, True, animation_timer)  # start the new game
+
+        master_frame.destroy()
+
+    def new_game_command():
+        # wipe the current screen
+        for children in window.winfo_children():
+            children.destroy()
+
+        global grid
+
+        the_board_size, grid, pointless_grid_last = set_up_grid(board_size)  # set up the new grid
+        global turn
+        turn = 0
+        grid = legal_moves(grid, turn)
+
+        create_game_frame_list()
+
+        create_game_selection_screen()
+
+    def create_end_game_box(the_larger, the_smaller):
+
+        # create frame to hold the other frames
+        end_of_game_frame_frame = tk.Frame(master=game_frame_list[2], height=150, width=200,
+                                           highlightbackground="black", highlightthickness=5)
+        end_of_game_frame_frame.grid(row=0, column=0, columnspan=8, rowspan=8)  # place in the centre of the grid
+
+        # create box to show end of game
+        end_of_game_frame = tk.Frame(master=end_of_game_frame_frame)
+        end_of_game_frame.grid(row=0, column=0, columnspan=1, rowspan=1)  # place in the centre of the grid
+
+        end_of_game_font = font.Font(family="Arial", size=30, weight="bold")  # create font for the title
+
+        winning_player_label = tk.Label(master=end_of_game_frame, text=f"{turn_text}", font=end_of_game_font,
+                                        bg=win_colour)
+        winning_player_label.grid(row=0, column=0)
+
+        tile_counter_font = font.Font(family="Arial", size=25, weight="bold")  # create font for the title
+
+        tile_counter_label = tk.Label(master=end_of_game_frame, text=f"{the_larger}-{the_smaller}",
+                                      font=tile_counter_font)
+        tile_counter_label.grid(row=1, column=0)
+
+        play_again_button = tk.Button(master=end_of_game_frame, text="Play again", font=tile_counter_font, bg="red",
+                                      command=lambda master_frame=end_of_game_frame_frame:
+                                      play_again_command(master_frame))
+        play_again_button.grid(row=2, column=0)
+
+        new_game_button = tk.Button(master=end_of_game_frame, text="New game", font=tile_counter_font, bg="gray",
+                                    command=new_game_command)
+        new_game_button.grid(row=4, column=0)
+
+        end_row_guide = [53, 44, 66, 20, 66]
+        for idx, r in enumerate(end_row_guide):
+            end_of_game_frame.grid_rowconfigure(idx, minsize=r, weight=0)
+
+        hide_frame = tk.Frame(master=end_of_game_frame_frame)
+        hide_frame.grid(row=1, column=0)
+
+        hide_column_guide = [200, 36]
+        for idx, c in enumerate(hide_column_guide):
+            hide_frame.grid_columnconfigure(idx, minsize=c, weight=0)
+
+        def show_command(self_frame, the_largest, the_smallest):
+            self_frame.destroy()
+            create_end_game_box(the_largest, the_smallest)
+
+        def hide_command(main_frame):
+            main_frame.destroy()
+
+            show_frame = tk.Frame(master=game_frame_list[2])
+            show_frame.grid(row=5, column=5)
+
+            show_button = tk.Button(master=show_frame, text="Show",
+                                    command=lambda self_frame=show_frame, the_largest=larger, the_smallest=smaller:
+                                    show_command(self_frame, the_largest, the_smallest))
+            show_button.grid()
+
+        hide_button = tk.Button(master=hide_frame, text="Hide",
+                                command=lambda main_frame=end_of_game_frame_frame: hide_command(main_frame))
+        hide_button.grid(row=0, column=1)
+
+    # show the box that shows who has won/whose turn it is
+    turn_display = tk.Label(master=game_frame_list[0], bg="#62c1e5", width=48, height=2, relief="solid",
+                            font=("Ari_1l", 17),
+                            text=turn_text)
+    turn_display.grid(row=0, column=0)
+
+    # code for the number of colours of either type
+    counters = [f"There are {white_counter} yellow counters", f"There are {black_counter} purple counters", turn_text]
+    colours_scoreboard = ["orange", "purple"]
+
+    # create scoreboard
+    for i in range(0, 2):
+        scoreboard = tk.Label(master=game_frame_list[1], bg=colours_scoreboard[i], width=24, height=2, relief="solid",
+                              font=("Ari_1l", 17), text=counters[i])
+        scoreboard.grid(row=1, column=i)
+
+    global grid
+    printer_update_grid(game_frame_list[2], difference, difference_i, difference_j,
+                        move_i, move_j, animation_timer, grid)
+
+    if not legal_moves_check:  # if the game has ended show the end_game box
+        create_end_game_box(larger, smaller)
+
+    if ai_turn[turn] and legal_moves_check:  # if there are legal moves, and it's the AI's turn then play their move
+        play_move(-2, -2, legal_moves_check, animation_timer)
+
+
+def printer_update_grid(master_frame, difference, difference_i, difference_j,
+                        move_i, move_j, animation_timer, the_grid):
+
+    colour_list_bw = ["#800080", "#951c6b", "#aa37ff", "#c05340", "#d56e2b", "#ea8a15",
+                      "#ffa500"]  # colours to switch from purple to yellow
+
+    # update the grid 1.) Remove old buttons, 2.) Change square clicked on, 3.) Change colours, 4.) new valid squares
+    for length in range(0, len(difference)):
+        if difference[length] != "0":  # check there are differences
+            continue
+        button_list = tk.Button(master=master_frame, bg="gray", relief="solid")
+        button_list.grid(row=difference_i[length], column=difference_j[length], sticky="news")
+
+    if move_i > -1 and ai_turn[swap_turn(turn)[0]]:  # check the AI played a legal move, show their move
+        button_list = tk.Button(master=master_frame, bg="black", relief="solid")
+        button_list.grid(row=move_i, column=move_j, sticky="news")
+        master_frame.update()
+        master_frame.after(animation_timer[0]*6)  # pause after the move to allow the player to see it
+
+    if move_i > -1:  # if the AI played a legal move, play their move
+        if the_grid[move_i][move_j] == "W":
+            button_list = tk.Button(master=master_frame, bg="orange", relief="solid")
+        else:
+            button_list = tk.Button(master=master_frame, bg="purple", relief="solid")
+        button_list.grid(row=move_i, column=move_j, sticky="news")
+
+    for i in range(0, 7):  # go through all the colours of the colour changer
+        for length in range(0, len(difference)):  # for all the differences
+            # if there are no moves or already played the move, or i = 0, and it's a new valid move
+            if difference[length] == "0" or (difference_i[length] == move_i and difference_j[length] == move_j) \
+                                                                            or (difference[length] == "v" and i != 0):
+                continue
+            elif difference[length] == "v":
+                if ai_turn[turn]:  # ensure the button only does something if it should
+                    button_list = tk.Button(master=master_frame, bg="white", relief="solid")
+                else:
+                    button_list = tk.Button(master=master_frame, bg="white", relief="solid",
+                                            command=lambda i_val=difference_i[length], j_val=difference_j[length]:
+                                            play_move(i_val, j_val, True, animation_timer))
+            elif difference[length] == "B":
+                button_list = tk.Button(master=master_frame, bg=colour_list_bw[6 - i], relief="solid")
+            else:
+                button_list = tk.Button(master=master_frame, bg=colour_list_bw[i], relief="solid")
+            button_list.grid(row=difference_i[length], column=difference_j[length], sticky="news")  # place tile on grid
+            master_frame.update()  # update grid
+        master_frame.after(animation_timer[1])  # play a delay so player can see the move
+
+
+def print_initially(master_frame, grid_to_print, animation_timers):
+
+    grid_maker = tk.Button(master=master_frame)  # create thing so pycharm doesn't complain
+
+    for i in range(board_size):  # for all the rows
+        for j in range(board_size):  # for all the columns, update tile to the right colour
+            if grid_to_print[i][j] == "W":
+                grid_maker = tk.Button(master=master_frame, bg="orange", relief="solid")
+            if grid_to_print[i][j] == "B":
+                grid_maker = tk.Button(master=master_frame, bg="purple", relief="solid")
+            if grid_to_print[i][j] == "v":
+                if ai_turn[turn]:  # ensure the button only does something if it should
+                    grid_maker = tk.Button(master=master_frame, bg="white", relief="solid")
+                else:
+                    grid_maker = tk.Button(master=master_frame, bg="white", relief="solid",
+                                           command=lambda i_val=i, j_val=j:
+                                           play_move(i_val, j_val, True, animation_timers))
+            if grid_to_print[i][j] == "0":
+                grid_maker = tk.Button(master=master_frame, bg="gray", relief="solid")
+            grid_maker.grid(row=i, column=j, sticky="news")
+
+
+def start_game(frame_to_destroy):
+
+    # get strategies from the selection screen
+    global ai_turn
+
+    temp = results[0].get()
+    ai_strategy[0] = temp[0:-2]
+    temp = results[1].get()
+    ai_strategy[1] = temp[0:-2]
+    animation_decider = animations_slider.get()
+
+    # set new default choices for continuation games
+    global default_animation_timer
+    global initial_settings
+    default_animation_timer = animation_decider  # time tile turns black, time to change colour, was 300, 30
+    initial_settings = [ai_strategy[0], ai_strategy[1]]  # initial game settings
+
+    # decide which turns the AI will play
+    for i in range(2):
+        if ai_strategy[i] == "Player":
+            ai_turn[i] = False
+        else:
+            ai_turn[i] = True
+
+    animation_timers = [animation_decider, animation_decider]
+    if "Cheater" in ai_strategy:  # if one or both players is cheating
+        animation_timers[1] = animation_timers[1]*2  # make swapping tiles longer to see moves better
+
+    # destroy the selection screen
+    frame_to_destroy.destroy()
+
+    print_initially(game_frame_list[2], grid, animation_timers)
+
+    # run the game
+    play_move(-2, -2, True, animation_timers)
+
+
+def create_outside_frame_box(master_frame):
+
+    size_guide_rows = [5, 55, 290, 100, 60, 60, 5]
+    size_guide_columns = [5, 480, 5]  # middle should be about 480 + whatever else is added
+
+    for rows in range(7):  # create the border around the window_frame
+        for columns in range(3):
+            if rows not in [1, 2, 3, 4, 5] or columns != 1:  # it's 3*3 so this makes everything except the centre black
+                grid_frame = tk.Frame(master=master_frame, background="black",
+                                      height=(size_guide_rows[rows]), width=(size_guide_columns[columns]))
+                grid_frame.grid(row=rows, column=columns)
+
+    for idx, r in enumerate(size_guide_rows):
+        master_frame.grid_rowconfigure(idx, minsize=r, weight=0)
+
+    for idx, c in enumerate(size_guide_columns):
+        master_frame.grid_columnconfigure(idx, minsize=c, weight=0)
+
+
+def create_title(master_frame):
+    title_font = font.Font(family="Arial", size=30, weight="bold")  # create font for the title
+    title = tk.Label(master=master_frame, text="Reversi!", font=title_font, background="white")  # create the title
+
+    title.grid(row=0, column=0, columnspan=1)  # add the title to the grid spanning all 9 columns
+
+
+# create function that creates the drop_down menus
+def create_custom_drop_down_menu(master_frame, background_colour,
+                                 strength_score, strategy_score, tactics_score, depth_score_entry, depth_score_label,
+                                 description):
+
+    # decode background_colour
+    side = 1
+    if background_colour == "purple":
+        side = 0
+
+    def show_menu(event):
+        # Create the dropdown menu
+        menu = tk.Menu(master_frame, tearoff=0)
+        for option in options:  # go through all the options and add them to the label each with different commands
+            menu.add_command(label=option, command=lambda opt=f"{option} ▼": select_option(opt))
+        menu.post(event.x_root, event.y_root)  # create the event at the coordinates of it
+
+    def select_option(chosen_option):
+
+        # Update the label text with the selected option
+        chosen_label.config(text=chosen_option)
+        # Update the variable with the selected option
+        result.set(chosen_option)
+
+        # update the rest of the card
+        modified_option = chosen_option[0:-2]  # remove the " ▼"
+        index = 0  # to make python happy :)
+        for index, names in enumerate(options):  # go through the names until you find the right one
+            if names == modified_option:
+                break
+
+        description.config(text=options_descriptions[index])
+        depth_score_label.config(text=options_depth_score[index])
+
+        find_true_value(strategy_score, options_strategy_score, max_values_strategy, index, side)
+        find_true_value(tactics_score, options_tactics_score, max_values_tactics, index, side)
+
+        find_strength_value(index, side, strength_score)
+
+        # show or hide the depth_score label/entry as needed
+        if options_depth_score[index] == 1:
+            depth_score_label.grid_forget()
+            depth_score_entry.grid(row=4, column=2)
+        else:
+            depth_score_entry.grid_forget()
+            depth_score_label.grid(row=4, column=2)
+
+    # Variable to store the selected option
+    result = StringVar()
+    result.set(f"{initial_settings[side]} ▼")  # Set the default value
+
+    chosen_label_font = font.Font(family="Arial", size=14, weight="bold", underline=True)  # create font for the title
+    chosen_label = tk.Label(master_frame, text=result.get(),
+                            background=background_colour, font=chosen_label_font)
+    chosen_label.bind("<Button-1>", show_menu)  # bind the show_menu function to left-clicking on the label
+
+    return chosen_label, result  # return the chosen_label for placing in the grid and the results for .get()
+
+
+def round_up(number):  # used to round-up numbers, used in 2 functions below
+    if int(number) < number:
+        number = int(number) + 1
+    return number
+
+
+def find_true_value(variable, score_array, limit_array, index, side):  # used to find true value of a score display
+
+    if options_depth_score[index] == 1:  # has changeable depth score
+        score = round_up(
+            min(int(round_up(score_array[index]) + int(AI_tree_layers[side]) - 1), int(limit_array[index])))
+        score = int(score)
+    else:
+        score = score_array[index]
+    variable.config(text=score)
+
+
+def find_strength_value(index, side, strength_score):  # used to find the true strength value
+
+    if options_strength_score[index] == "find":
+
+        true_strategy_score = round_up(
+            min(int(round_up(options_strategy_score[index]) + int(AI_tree_layers[side]) - 1),
+                int(max_values_strategy[index])))
+        true_tactics_score = round_up(
+            min(int(round_up(options_tactics_score[index]) + int(AI_tree_layers[side]) - 1),
+                int(max_values_tactics[index])))
+
+        score = round_up((true_strategy_score + true_tactics_score) / 2)
+        score = int(score)
+    else:
+        score = options_strategy_score[index]
+
+    strength_score.config(text=score)
+
+
+def fill_choose_player_box(master_frame, background_colour):
+
+    # decode background_colour
+    side = 0
+    if background_colour == "yellow":
+        side = 1
+
+    # creates the grid to contain everything and the size of each row and column
+    size_guide_rows = [70, 30, 30, 30, 30, 90]
+    size_guide_columns = [30, 100, 40, 30]
+
+    # set the size of each row and column
+    for r in range(len(size_guide_rows)):
+        master_frame.grid_rowconfigure(r, weight=1, minsize=size_guide_rows[r])
+    for c in range(len(size_guide_columns)):
+        master_frame.grid_columnconfigure(c, weight=1, minsize=size_guide_columns[c])
+
+    def place_stats(row, column, columnspan, font_size, text, setting):  # creates labels and places them
+        the_font = font.Font(family="Arial", size=font_size, weight="bold")  # create font for the title
+        if setting == "label":
+            the_stat = tk.Label(master=master_frame, text=f"{text}", font=the_font, background=f"{background_colour}",
+                                wraplength=190)
+
+        else:  # if it's an entry rather than a label
+            def update_global_ai_tree_layers(*args):  # pass any number of arguments into function
+                global AI_tree_layers  # for later as this will be changed globally
+                number = the_stat_pointer.get()  # get the number from the trace
+
+                # get the chosen AI and the respective index to be used later
+                chosen_ai = result.get()[0:-2]
+                idx = 0
+                for idx, option in enumerate(options):
+                    if option == chosen_ai:
+                        break
+
+                # when they add or take away from it choose which digit to keep/add to keep it 1 digit long
+                if len(number) == 0:  # if they delete it then add the old number back
+                    the_stat.insert(0, AI_tree_layers[side])
+
+                if len(number) > 1:  # if it's too long we want to pick just one digit to keep
+                    # they've either added to the start (number[0]) or the end number[-1]
+
+                    new = AI_tree_layers[side]  # used if the new number is the same as the old
+                    if int(number[0]) != AI_tree_layers[side]:  # if it's at the start and different
+                        new = number[0]  # update "new"
+                    if int(number[-1]) != AI_tree_layers[side]:  # if it's at the end and different
+                        new = number[-1]  # update "new"
+
+                    if new in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:  # if "new" is a valid number
+                        the_stat.delete(0, END)  # then delete the current stuff it
+                        the_stat.insert(0, new)  # at "new"
+                        number = new  # update number for later
+
+                    else:  # if it isn't valid reset it back to the last valid input
+                        the_stat.delete(0, END)
+                        the_stat.insert(0, AI_tree_layers[side])
+
+                # if the input is valid update AI_tree_layers[side] to it
+                if len(number) == 1 and number in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                    number = int(the_stat_pointer.get())  # get the value and make it an integer to allow maths
+                    if 0 < number < 10:
+                        AI_tree_layers[side] = number
+
+                # update values
+                find_true_value(strategy_score, options_strategy_score, max_values_strategy, idx, side)
+                find_true_value(tactics_score, options_tactics_score, max_values_tactics, idx, side)
+                find_strength_value(idx, side, strength_score)
+
+            global AI_tree_layers  # to make python happy :)
+
+            the_stat_pointer = StringVar()  # set a StringVar() to be referred to later (with .get())
+            the_stat_pointer.set(AI_tree_layers[side])  # set its value
+            the_stat = Entry(master=master_frame, width=1, font=the_font, background=f"{background_colour}",
+                             textvariable=the_stat_pointer)  # create the Entry
+
+            # add the trace to call function when it's updated
+            the_stat_pointer.trace("w", update_global_ai_tree_layers)
+
+        the_stat.grid(row=row, column=column, columnspan=columnspan)
+
+        return the_stat
+
+    # decode background_colour
+    side = 1
+    if background_colour == "purple":
+        side = 0
+
+    # find the base settings
+    index = 0  # to make python happy :)
+    for index, names in enumerate(options):  # go through the names until you find the right one
+        if names == initial_settings[side]:
+            break
+
+    # create the scores
+    place_stats(1, 1, 1, 12, "Strength:", "label")  # their strength
+    strength_score = place_stats(1, 2, 1, 12, options_strength_score[index], "label")
+
+    place_stats(2, 1, 1, 12, "Strategy:", "label")  # whether they are random
+    strategy_score = place_stats(2, 2, 1, 12, options_strategy_score[index], "label")
+
+    place_stats(3, 1, 1, 12, "Tactics:", "label")  # whether they are random
+    tactics_score = place_stats(3, 2, 1, 12, options_tactics_score[index], "label")
+
+    # deal with depth
+    place_stats(4, 1, 1, 12, "Depth:", "label")
+    depth_score_entry = place_stats(4, 2, 1, 12, options_depth_score[index], "entry")
+    depth_score_label = place_stats(4, 2, 1, 12, options_depth_score[index], "label")
+
+    # get the true value if we're starting with one which depends on AI_layers
+    find_true_value(strategy_score, options_strategy_score, max_values_strategy, index, side)
+    find_true_value(tactics_score, options_tactics_score, max_values_tactics, index, side)
+    find_strength_value(index, side, strength_score)
+
+    if options_depth_score[index] == 1:
+        depth_score_label.grid_forget()
+    else:
+        depth_score_entry.grid_forget()
+
+    # the text to describe the AI
+    description = place_stats(5, 0, 4, 8, options_descriptions[index], "label")
+
+    chosen_player, result = create_custom_drop_down_menu(master_frame, background_colour,
+                                                         strength_score, strategy_score, tactics_score,
+                                                         depth_score_entry, depth_score_label, description)
+    chosen_player.grid(row=0, column=0, columnspan=4)
+
+    return result
+
+
+def create_player_chooser_boxes(master_frame):  # create the display to hold the two choices of Ais/players
+    grid_size = [5, 9]  # the grid will be 7*8 (for now)
+
+    size_guide_rows = [20, 5, 280, 5, 20]  # these decide the row heights
+    size_guide_columns = [20, 5, 200, 5, 20, 5, 200, 5, 20]  # these decide the column widths
+
+    result_list = []  # create an empty to list to hold the chosen values of the players for later
+
+    for rows in range(0, grid_size[0]):  # go through all the rows and columns
+        for columns in range(grid_size[1]):
+
+            if rows == 2 and columns in [2, 6]:  # create the boxes for the two sides
+
+                colour = "orange"  # pick the colours to be inputted later
+                if columns == 2:
+                    colour = "purple"
+
+                frame = tk.Frame(master=master_frame,
+                                 height=(size_guide_rows[rows]), width=(size_guide_columns[columns]),
+                                 background=colour)
+                frame.grid(row=rows, column=columns)  # create the frame and add it to the grid
+
+                result_list.append(fill_choose_player_box(frame, colour))  # fill the box with the stats
+
+            # create the walls (thin parts of the grid filled with black)
+            if (rows in [2] and columns in [1, 3, 5, 7]) or (rows in [1, 3] and columns in [1, 2, 3, 5, 6, 7]):
+                frame = tk.Frame(master=master_frame,
+                                 height=(size_guide_rows[rows]), width=(size_guide_columns[columns]),
+                                 background="black")
+                frame.grid(row=rows, column=columns)
+
+    for c in range(grid_size[1]):  # set the minimum width of the columns
+        master_frame.grid_columnconfigure(c, weight=1, minsize=size_guide_columns[c])
+
+    return result_list  # return the result_list so that we can get it later with .get()
+
+
+def create_animations_box(master_frame):  # create box to decide how long animations last
+    # create the label on the left and place it
+    animations_font = font.Font(family="Arial", size=15, weight="bold")  # create font for the words
+    animations_label = tk.Label(master=master_frame, text="Animation Length:", bg="white", font=animations_font)
+    animations_label.grid(row=0, column=1, columnspan=1)
+
+    # create the slider on the right
+    animation_slider_font = font.Font(family="Arial", size=12, weight="bold")  # create font for the words
+    animation_slider = Scale(master_frame, from_=0, to=100, orient=HORIZONTAL,
+                             bg="lightblue",  # colour of the background
+                             bd=1,  # width of the border, default is 2
+                             highlightbackground="black",  # border colour
+                             length=150,  # overall length of the slider
+                             sliderlength=35,  # length of the slider thing you grad, default is 30
+                             font=animation_slider_font)
+
+    animation_slider.set(default_animation_timer)  # set the base value (50)
+
+    animation_slider.grid(row=0, column=3, columnspan=1)  # place the slider
+
+    # set column widths
+    column_size_guide = [40, 170, 25, 220, 10]  # controls how wide each column is to place the label and slider
+    for idx, c in enumerate(column_size_guide):
+        master_frame.grid_columnconfigure(idx, minsize=c, weight=1)
+
+    return animation_slider  # return the slider, so we can get the result later with .get()
+
+
+def create_start_game_box(master_frame, master_master_frame):  # create box to hold the start_game button
+    start_game_font = font.Font(family="Arial", size=15, weight="bold")  # create font for the start_game_box
+    start_game_button = tk.Button(master=master_frame, text="Start Game", font=start_game_font,
+                                  command=lambda frame_to_destroy=master_master_frame: start_game(frame_to_destroy),
+                                  background="red", width=15, height=1)
+
+    start_game_button.grid(row=0, column=0, columnspan=1)  # place the button on the grid
+
+
+def show_all_ai_button(master_frame):
+    start_game_font = font.Font(family="Arial", size=8, weight="bold")  # create font for the start_game_box
+    button = tk.Button(master=master_frame, text="Show all AIs", font=start_game_font,
+                       background="lightgray", command=lambda: show_all_ai_command(button, master_frame))
+    button.grid(row=0, column=0, columnspan=1)
+
+    # set column widths
+    column_size_guide = [120, 240, 120]  # controls how wide each column is to place the label and slider
+    for idx, c in enumerate(column_size_guide):
+        master_frame.grid_columnconfigure(idx, minsize=c, weight=1)
+
+
+def show_all_ai_command(self, master_frame):
+    self.destroy()
+
+    label = tk.Label(master=master_frame, background="white")
+    label.grid(row=0, column=0, columnspan=9)
+
+    global options  # update the global options variable to include all the AIs
+    options = all_options
+
+
+def how_to_play_button(master_frame):
+    start_game_font = font.Font(family="Arial", size=8, weight="bold")  # create font for the start_game_box
+    button = tk.Button(master=master_frame, text="How to Play", font=start_game_font,
+                       background="lightgray", command=lambda number=0: how_to_play_command(number, False))
+    button.grid(row=0, column=2, columnspan=1)
+
+
+def close_how_to_play(master_frame):
+
+    global how_to_play_flag
+    how_to_play_flag = False
+
+    master_frame.destroy()  # destroy the frame
+
+
+def next_image(number):
+
+    if number < 6 - 1:  # if we can go to the next image
+        number = number + 1
+
+        how_to_play_command(number, True)
+
+
+def previous_image(number):
+
+    if number > 0:  # if we can go to the next image
+        number = number - 1
+
+        how_to_play_command(number, True)
+
+
+def how_to_play_command(current_image, internal):
+
+    global how_to_play_flag
+    if how_to_play_flag and not internal:
+        return
+    else:
+        how_to_play_flag = True
+
+    global show_play_frame_frame
+
+    if not internal:  # create a new frame if there isn't one currently
+        show_play_frame_frame = tk.Frame(master=window_frame_frame, highlightbackground="black", highlightthickness=4)
+        show_play_frame_frame.grid(row=1, column=1, columnspan=1, rowspan=6)
+
+    # set column widths, total is 330
+    column_size_guide = [40, 248, 40]  # controls how wide each column is to place the label and slider
+    for idx, c in enumerate(column_size_guide):
+        show_play_frame_frame.grid_columnconfigure(index=idx, minsize=c, weight=1)
+
+    # set row widths, total is 430
+    row_size_guide = [50, 30, 248, 100, 30]  # controls how wide each column is to place the label and slider
+    for idx, r in enumerate(row_size_guide):
+        show_play_frame_frame.grid_rowconfigure(index=idx, minsize=r, weight=1)
+
+    # make everything the right colour!
+    for rows in range(len(row_size_guide)):
+        for columns in range(len(column_size_guide)):
+            temp = tk.Frame(master=show_play_frame_frame, background="lightblue",
+                            height=(row_size_guide[rows]), width=(column_size_guide[columns]))
+            temp.grid(row=rows, column=columns)
+
+    # close window
+    close_button = tk.Button(master=show_play_frame_frame, background="red", height=2, width=3, text="X",
+                             command=lambda master_frame=show_play_frame_frame: close_how_to_play(master_frame))
+    close_button.grid(row=0, column=2)
+
+    # next image
+    next_button = tk.Button(master=show_play_frame_frame, background="grey", height=2, width=3, text="<",
+                            command=lambda number=current_image: previous_image(number))
+    next_button.grid(row=0, column=0, rowspan=10)
+
+    # previous image
+    previous_button = tk.Button(master=show_play_frame_frame, background="grey", height=2, width=3, text=">",
+                                command=lambda number=current_image: next_image(number))
+    previous_button.grid(row=0, column=2, rowspan=10)
+
+    show_play_frame = tk.Frame(master=show_play_frame_frame, highlightbackground="black", highlightthickness=4)
+    show_play_frame.grid(row=2, column=1)
+
+    # title
+    title_font = font.Font(family="Arial", size=15, weight="bold", underline=True)  # create font for the title
+    title = tk.Label(master=show_play_frame_frame, text="How to play!", font=title_font, bg="lightblue")
+    title.grid(row=0, column=1)
+
+    bold_font = font.Font(family="Arial", size=11, weight="bold")
+
+    # show the turn of the board
+    turn_shower = tk.Label(master=show_play_frame_frame, text="Purple's turn", font=bold_font, bg="lightblue")
+    turn_shower.grid(row=1, column=1)
+
+    # text
+    text_text = "bug :(<"
+    text = tk.Label(master=show_play_frame_frame, text=text_text, wraplength=230, bg="lightblue")
+    text.grid(row=3, column=1)
+
+    # slide counter
+    slide_counter = tk.Label(master=show_play_frame_frame, text=f"{current_image + 1}/6", wraplength=230, bg="lightblue")
+    slide_counter.grid(row=4, column=1)
+
+    # set column widths, total is 240, controls how wide each column is to place the label and slider
+    column_size_guide = [30, 30, 30, 30, 30, 30, 30, 30]
+    for idx, c in enumerate(column_size_guide):
+        show_play_frame.grid_columnconfigure(index=idx, minsize=c, weight=1)
+
+    # set row widths, total is 320
+    row_size_guide = [30, 30, 30, 30, 30, 30, 30, 30]  # controls how wide each column is to place the label and slider
+    for idx, r in enumerate(row_size_guide):
+        show_play_frame.grid_rowconfigure(index=idx, minsize=r, weight=1)
+
+    # create functions to show the slides on how to play the game
+    def how_to_play_slide_1():
+
+        text.configure(text="When it's your turn play a legal move by clicking on one of the white squares. "
+                            "Moves are legal when one or more of the opponent's tiles are surrounded on a line by"
+                            " the new tile and an old tile")
+
+        slide_1_grid = [["B", "W", "W", "W", "W", "W", "W", "0"],
+                        ["W", "W", "0", "0", "0", "0", "0", "0"],
+                        ["W", "0", "W", "W", "0", "0", "0", "0"],
+                        ["W", "0", "0", "W", "B", "0", "0", "0"],
+                        ["W", "0", "0", "B", "W", "W", "W", "0"],
+                        ["W", "0", "0", "0", "0", "W", "0", "0"],
+                        ["W", "0", "0", "0", "0", "0", "W", "0"],
+                        ["0", "0", "B", "W", "B", "0", "0", "0"]]
+
+        slide_1_grid = legal_moves(slide_1_grid, 0)
+
+        print_initially(show_play_frame, slide_1_grid, 0)
+
+    def how_to_play_slide_2():
+
+        text.configure(text="Here purple plays in the bottom right and takes over the entire diagonal")
+
+        # set the original position
+        slide_2_grid = [["B", "W", "W", "W", "W", "W", "W", "0"],
+                        ["W", "W", "0", "0", "0", "0", "0", "0"],
+                        ["W", "0", "W", "W", "0", "0", "0", "0"],
+                        ["W", "0", "0", "W", "B", "0", "0", "0"],
+                        ["W", "0", "0", "B", "W", "W", "W", "0"],
+                        ["W", "0", "0", "0", "0", "W", "0", "0"],
+                        ["W", "0", "0", "0", "0", "0", "W", "0"],
+                        ["0", "0", "B", "W", "B", "B", "W", "0"]]
+
+        slide_2_grid = legal_moves(slide_2_grid, 0)  # get the legal moves
+        print_initially(show_play_frame, slide_2_grid, 0)  # show it on the board
+
+        new_slide_2_grid = copy.deepcopy(slide_2_grid)  # create a copy to change
+        new_slide_2_grid = grid_changer(7, 7, new_slide_2_grid, 0)  # play in the bottom right
+        new_slide_2_grid = legal_moves(new_slide_2_grid, 1)  # get the new legal moves
+
+        while True:  # keep running the animation
+
+            white_counter, black_counter, difference_i, difference_j, difference, legal_moves_check \
+                = difference_finder(new_slide_2_grid, slide_2_grid)  # find the differences
+            turn_shower.configure(text="Orange's turn")
+            # show the new position on the board
+            printer_update_grid(show_play_frame, difference, difference_i, difference_j,
+                                7, 7, [35, 100], new_slide_2_grid)
+            # wait to give time for them to see it
+
+            for i in range(20):
+                if current_image == 1:
+                    show_play_frame.after(100)
+                else:
+                    break
+
+            white_counter, black_counter, difference_i, difference_j, difference, legal_moves_check \
+                = difference_finder(slide_2_grid, new_slide_2_grid)  # find the differences
+            turn_shower.configure(text="Purple's turn")
+            # show the original position on the board
+            printer_update_grid(show_play_frame, difference, difference_i, difference_j, -2, -2, [0, 0], slide_2_grid)
+            # wait to give time for them to see it
+            show_play_frame.after(2000)
+            for i in range(20):
+                if current_image == 1:
+                    show_play_frame.after(100)
+                else:
+                    break
+
+    def how_to_play_slide_3():
+        text.configure(text="Players take turns placing tiles, purple goes first and orange goes second")
+
+        while True:
+            # set the original position
+            slide_3_grid = copy.deepcopy(grid)
+
+            slide_3_grid = legal_moves(slide_3_grid, 0)  # get the legal moves
+            print_initially(show_play_frame, slide_3_grid, 0)  # show it on the board
+
+            local_turn = 0
+
+            turn_colours = ["Purple", "Orange"]
+
+            while True:  # keep running the animation
+
+                old_slide_3_grid = copy.deepcopy(slide_3_grid)
+
+                if local_turn == 0:
+                    move_i, move_j = ai_player("Tile Maximiser", 0, slide_3_grid, local_turn)
+                else:
+                    move_i, move_j = ai_player("Border Control", 0, slide_3_grid, local_turn)
+
+                slide_3_grid = grid_changer(move_i, move_j, slide_3_grid, local_turn)
+                local_turn = swap_turn(local_turn)[0]
+
+                slide_3_grid = legal_moves(slide_3_grid, local_turn)
+
+                white_counter, black_counter, difference_i, difference_j, difference, legal_moves_check \
+                    = difference_finder(slide_3_grid, old_slide_3_grid)  # find the differences
+
+                turn_shower.configure(text=f"{turn_colours[local_turn]}'s turn")
+
+                # show the new position on the board
+                printer_update_grid(show_play_frame, difference, difference_i, difference_j,
+                                    move_i, move_j, [35, 100], slide_3_grid)
+
+                for i in range(20):
+                    if current_image == 2:
+                        show_play_frame.after(100)
+                    else:
+                        break
+
+                if not move_list_finder(slide_3_grid):
+                    break
+
+    def how_to_play_slide_4():
+        text.configure(text="If a player can't play any moves their turn is skipped \n"
+                            "Here purple's turn would be skipped \n"
+                            "When neither player can play any moves the game ends")
+        # set the original position
+        slide_4_grid = [["W", "W", "W", "W", "W", "W", "W", "W"],
+                        ["W", "W", "W", "W", "W", "W", "W", "W"],
+                        ["W", "W", "B", "B", "B", "B", "B", "B"],
+                        ["B", "B", "B", "B", "B", "0", "0", "0"],
+                        ["B", "0", "0", "B", "B", "B", "B", "0"],
+                        ["B", "0", "0", "0", "0", "B", "0", "0"],
+                        ["B", "0", "0", "0", "0", "0", "B", "0"],
+                        ["0", "0", "0", "0", "0", "0", "B", "0"]]
+
+        slide_4_grid = legal_moves(slide_4_grid, 0)  # get the legal moves
+        print_initially(show_play_frame, slide_4_grid, 0)  # show it on the board
+
+        turn_shower.configure(text=f"Purple's turn")
+
+    def how_to_play_slide_5():
+        text.configure(text="At the end of the game the player with the most tiles of their colour wins \n"
+                            "In this position purple wins 44 tiles to 4!")
+
+        slide_5_grid = [["B", "B", "B", "B", "B", "B", "0", "B"],
+                        ["B", "B", "B", "B", "B", "0", "B", "0"],
+                        ["B", "B", "B", "B", "B", "B", "B", "W"],
+                        ["B", "B", "B", "B", "B", "0", "B", "0"],
+                        ["B", "B", "B", "B", "B", "W", "B", "B"],
+                        ["0", "B", "B", "0", "W", "0", "B", "0"],
+                        ["0", "0", "B", "B", "B", "B", "B", "B"],
+                        ["0", "0", "W", "0", "B", "0", "B", "0"]]
+
+        print_initially(show_play_frame, slide_5_grid, 0)  # show it on the board
+
+        turn_shower.configure(text=f"Game over! Purple wins")
+
+    def how_to_play_slide_6():
+        text.configure(text="")
+
+        other_text = tk.Label(master=show_play_frame_frame, wraplength=230, bg="lightblue",
+                              text="Choose which AI/player plays each colour by clicking on the "
+                                   "names at the top of the purple and orange boxes \n"
+                                   "The harder AIs are lower down, warning: Cheater cheats \n \n"
+                                   "For AIs that look into the future e.g. oracle border you can choose how far they "
+                                   "look (from 1-9 moves) by clicking on the number and entering a new one,"
+                                   "however they get much slower at higher depths (especially above depth 6) \n \n"
+                                   "You can change the animation timers "
+                                   "(the time it takes tiles to change from orange to purple and vice versa "
+                                   "and the time tiles will turn black when the AI plays on them \n \n"
+                                   "You can also show all of the AIs, once pressed this cannot be undone \n \n"
+                                   "Press \"Start Game\" to start the game")
+        other_text.grid(row=0, column=1, rowspan=5)
+
+        turn_shower.destroy()
+
+    if current_image + 1 == 1:
+        how_to_play_slide_1()
+    if current_image + 1 == 2:
+        how_to_play_slide_2()
+    if current_image + 1 == 3:
+        how_to_play_slide_3()
+    if current_image + 1 == 4:
+        how_to_play_slide_4()
+    if current_image + 1 == 5:
+        how_to_play_slide_5()
+    if current_image + 1 == 6:
+        how_to_play_slide_6()
+
+
+# set up the window for everything
+window = tk.Tk()
+window.geometry("700x840")
+window.configure(bg="#D3D3D3")
+
+
+def create_game_frame_list():
+    # frames for the game window
+    global game_frame_list
+    game_frame_list = []
+
+    for frames in range(3):
+        game_frame_list.append(tk.Frame(master=window))
+        game_frame_list[frames].pack()
+
+    # set the widths and heights for frame_list[2] that holds the grid
+    for idx in range(8):
+        game_frame_list[2].grid_rowconfigure(idx, minsize=80, weight=0)
+        game_frame_list[2].grid_columnconfigure(idx, minsize=80, weight=0)
+
+
+def create_game_selection_screen():
+
+    global window_frame_frame
+    global results
+    global animations_slider
+
+    create_game_frame_list()
+
+    window_frame_frame = tk.Frame(master=window, background="white")  # create the box to hold the start menu
+    window_frame_frame.pack()
+
+    create_outside_frame_box(window_frame_frame)  # create the outer frame's border
+
+    title_frame = tk.Frame(master=window_frame_frame, background="white")  # create the main frame
+    title_frame.grid(row=1, column=1)  # place it in the middle of the window_frame_frame box
+    create_title(title_frame)  # create the title
+
+    choice_frame = tk.Frame(master=window_frame_frame, background="white")  # create the main frame
+    choice_frame.grid(row=2, column=1)  # place it in the middle of the window_frame_frame box
+    results = create_player_chooser_boxes(choice_frame)  # run the function
+
+    animation_frame = tk.Frame(master=window_frame_frame, background="white")  # create the main frame
+    animation_frame.grid(row=3, column=1)  # place it in the middle of the window_frame_frame box
+    animations_slider = create_animations_box(animation_frame)  # create the box to decide animation length
+
+    start_frame = tk.Frame(master=window_frame_frame, background="white")  # create the main frame
+    start_frame.grid(row=4, column=1)  # place it in the middle of the window_frame_frame box
+    create_start_game_box(start_frame, window_frame_frame)  # create the box to hold the start_game button
+
+    show_frame = tk.Frame(master=window_frame_frame, background="white")  # create the main frame
+    show_frame.grid(row=5, column=1)  # place it in the middle of the window_frame_frame box
+    show_all_ai_button(show_frame)
+    how_to_play_button(show_frame)
+
+
+# put things in global scope if they may to be accessed anywhere
+game_frame_list = []
+window_frame_frame = tk.Frame
+results = []
+animations_slider = Scale()
+show_play_frame_frame = tk.Frame
+
+how_to_play_flag = False
+
+create_game_selection_screen()  # create the game selection screen
+
+window.mainloop()  # runs the window
 
