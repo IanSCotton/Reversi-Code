@@ -1,25 +1,25 @@
-###Overview of the Reversi code:
+### Overview of the Reversi code:
 The overall function of the code is to allow the player to play against or watch different AIs in Reversi.
 
-##Functions of the code:
-#Pre-game:
+## Functions of the code:
+# Pre-game:
 •	The player can choose from a wide array of AIs and themselves who will play as purple (going first) and who will play as yellow (going second), each AI has specific stats and descriptions.
 •	The player can use a slider to decide on the lengths of animations from 0-100 (milliseconds)
 •	The player can click on a button that shows how to play, it has three panels simply explaining the game
 •	The player can click on a button that shows all AIs, once pressed this cannot be unpressed and will allow the player to choose a wider array of AIs to play against
 •	The player can start the game
 
-#In game:
+# In game:
 •	The code allows people to play games of Reversi, inside games players do this by clicking on white tiles when it is their turn, the effect of the moves and the legal moves are calculated by the programme.
 •	When a move is played the tile played on temporarily turns black and the effected tiles change to the appropriate colour following a sequence of intermediate colours.
 •	The programme works out when the game has ended and congratulates the winning player.
 
-#Post-game:
+# Post-game:
 •	The code shows the winning side and the number of tiles each side has
 •	The player has the choice of either “Play Again” (with the same settings) or going back to the pre-game screen with “New Game” 
 
-##Overview of the layout:
-#Sections: (all line numbers and lengths are subject to change)
+## Overview of the layout:
+# Sections: (all line numbers and lengths are subject to change)
 •	Initial setup including imports (lines 1-123)
 •	Finding AI moves and the AIs choosing moves (lines 126-868)
 •	Making moves and updating the board (lines 872-1012)
@@ -27,7 +27,7 @@ The overall function of the code is to allow the player to play against or watch
 •	Creating the start game menu (lines 1173-1606) 
 
 
-#Global variables: any variables that are used with global whilst in functions as they may need to be updated from inside a function.
+# Global variables: any variables that are used with global whilst in functions as they may need to be updated from inside a function.
 •	grid (this variable holds the grid, and each tile can be accessed with grid[row][column]
 •	grid_last (this variable holds the previous grid, used for comparison, and can be accessed the same way)
 •	turn (this variable shows the current turn, it is either 0 or 1)
@@ -42,7 +42,7 @@ The overall function of the code is to allow the player to play against or watch
 •	results (this shows what the player has picked for who plays purple and orange)
 •	animations_slider (this holds the animation slider which can be used to determine what the player has chosen the animation length to be)
  
-##Overview of initial setup (lines 1-123)
+## Overview of initial setup (lines 1-123)
 •	import useful packages
 •	set default options for the animation-timer, the selected AIs and the depth that certain AIs will look to.
 •	Create the options and longer all_options for the drop-down menus when selecting the AIs
@@ -53,13 +53,13 @@ The overall function of the code is to allow the player to play against or watch
 •	Set the turn
 •	Create function to swap the turn
 
-#Functions:
+# Functions:
 •	the_swap(a_grid): this goes through the entire grid and swaps purple and yellow tiles, it returns a modified version of a_grid
 •	swap_turn(binary_variable): this takes a 0 or 1 and returns the opposite e.g. 0 returns 1,0 and 1 returns 0, 1
  
-#Overview of finding AI moves and the AIs choosing moves (lines 126-868)
+# Overview of finding AI moves and the AIs choosing moves (lines 126-868)
 
-#Functions and classes:
+# Functions and classes:
 •	move_list_finder(grid) notes all of the legal moves in a position returns move_list
 •	first_move(move_list) returns the first legal move
 •	random_move(move_list) returns a random move
@@ -89,7 +89,7 @@ The overall function of the code is to allow the player to play against or watch
 •	smiley_face(grid, turn): this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
 •	ai_player(setting): unless there’s cheating if there is only one move return that move otherwise return a move using the strategy of one of these AIs:
 
-#AI list:
+# AI list:
 Player: controlled by the player
 1st_move: plays the 1st move in the move list
 Random: plays random moves
@@ -104,12 +104,12 @@ future_border_test_2:  : Looks into the future using the AI_tree_layers approach
 Oracle_Maximiser: Looks into the future using the class and a,b pruning approach to maximise its tiles
 Oracle_border: Looks into the future using the class and a,b pruning approach to maximise its score, using a mixture of maximisation and protected_move_grid
  
-##Making moves and updating the board (lines 872-1012)
+## Making moves and updating the board (lines 872-1012)
 •	Define the overall play_move function which manages the rest of this section, it runs updater, checks for legal moves, if there are none it runs updater (this time for the other player) it then runs printer updating the board 
 •	Updater gets a copy of the current board to get differences for printing later, if gets the move depending on which AI is active (or the player move if the player is playing) it plays the move and updates nearby cells (grid_changer), swaps the turn (swap_turn), finds all of the legal moves (legal_moves), finds the differences between the current and old position (difference_finder). 
 
 
-#Functions:
+# Functions:
 •	play_move(i, j, legal_moves_check, animation_timer):  runs updater, checks for legal moves, if there are none it runs updater(i, j, legal_moves_check) (this time for the other player) it then runs printer updating the board never returns
 •	grid_changer(i, j, grid, turn): updates the cell and all cells around it returns the new grid
 •	legal_moves_of_cell(grid, turn, i, j) finds whether a specific cell (i,j) has any legal moves, if so it sets it to “v”, returns the new grid
@@ -118,12 +118,12 @@ Oracle_border: Looks into the future using the class and a,b pruning approach to
 •	updater(i, j, legal_moves_check): creates a copy of the current board, gets the move as necessary with ai_player, updates the grid with grid_changer, swaps the turn with swap_turn, finds the legal moves of the grid with legal_moves, finds the differences between the new and old grid with difference_finder returns whether there are legal moves, the number of white tiles, the number of black tiles, the move that was played in terms of (i and j), the differences(in terms of i) the differences(in terms of j) the new tiles they changes 
 
  
-##Creating the start game menu (lines 1173-1606) 
+## Creating the start game menu (lines 1173-1606) 
 •	Printer function updates the board, there are 3 frames: 1.) holds whose turn it is or whose won, 2.) shows the number of tiles for each side, 3.) shows the grid itself. Printer updates this with animations and allows the player to click to play their move.
 •	At the end of the game the new_game screen appears which tells the player who won, with a score based on tiles and gives them the option to play the same game again or to go to the start screen to change the settings.
 •	The start screen allows the player to decide on which AIs/the player plays purple and yellow and gives stats and descriptions, it also allows the player to select animation lengths, show all AIs with a button and create a pop-up with 3 slides that explains how to play the game.
 
-#Functions:
+# Functions:
 •	printer(legal_moves_check, white_counter, black_counter, move_i, move_j, difference, difference_i, difference_j, animation_timer): there are 3 frames: 1.) holds whose turn it is or whose won (depending on legal_moves_check), 2.) shows the number of tiles for each side (using white_counter and black_counter), 3.) shows the grid itself and is updated with animations based on(difference, difference_i, difference_j, animation_timer, move_i and move_j) with the tile where the move is played briefly turning black with changed colours moving across a colour gradient. Printer updates this with animations and allows the player to click to play their move. If the AI is to play it allows them to with play_move(-2. -2, legal_moves_check, animation_timer), if it’s the player’s turn they play by clicking on a white tile on the board. It never returns
 •	create_end_game_box(larger, smaller): at the end of the game create a box to display the score, there are buttons to run play_again_command, to run new_game_command or to minimise it with hide_command never returns
 •	hide_command(main_frame) destroys the main frame (that shows the score) and creates a “show” button to bring it back never returns
@@ -151,7 +151,7 @@ the drop-down menu creates a menu that allows the player to pick from a number o
 •	create_game_frame_list(): creates the global list of frames for the game that are used later. Never returns
 •	create_game_selection_screen(): this creates the screen for the start of the game where all the settings can be chosen. It runs create_game_frame_list, create_outside_frame_box, create_title, create_player_chooser_boxes, create_animation_box, create_start_game_box, show_all_ai_button, how_to_play_button and never returns 
 
-#Other:
+# Other:
 •	The window for all tkinter stuff is created separately and is thus in global scope
 •	Some global variables are set-up
 •	Create_game_selection_screen() is ran
