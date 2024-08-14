@@ -97,20 +97,20 @@ The overall function of the code is to allow the player to play against or watch
 +	**ai_player(setting, layers, grid, turn, board_size)**: unless there’s cheating if there is only one move return that move otherwise return a move using the strategy of one of these AIs:
 
 ### AI list:
-Player: controlled by the player\
-1st Move: plays the 1st move in the move list\
-Random: plays random moves\
-Border Control: Compares moves to a grid of move quality and plays the best one\
-Tile_Maximiser: Plays the move that minimises the opponent’s tiles\
-Border Controller: Uses the protected move grid to try to play slightly better moves then plays border_control\
-Tile Maximiser: Maximises the number of tiles the opponent has\
-Max Tile & Border: looks at the border control grid first and plays the move that maximises its tiles whilst scoring highest\
-Future Maximiser: Looks into the future using the AI_tree_layers approach to maximise its tiles\
-Future Border: : Looks into the future using the AI_tree_layers approach to maximise its score, score based off border_control\
-Future Border 2:  : Looks into the future using the AI_tree_layers approach to maximise its score, score based off border_control_2\
-Oracle Maximiser: Looks into the future using the class and a,b pruning approach to maximise its tiles\
-Oracle border: Looks into the future using the class and a,b pruning approach to maximise its score, using a mixture of maximisation and protected_move_grid\
-Cheater: runs cheater_code()
++ **Player**: controlled by the player\
++ **1st Move**: plays the 1st move in the move list\
++ **Random**: plays random moves\
++ **Border Control**: Compares moves to a grid of move quality and plays the best one\
++ **Tile Maximiser**: Plays the move that minimises the opponent’s tiles\
++ **Border Controller**: Uses the protected move grid to try to play slightly better moves then plays border_control\
++ **Tile Maximiser**: Maximises the number of tiles the opponent has\
++ **Max Tile & Border**: looks at the border control grid first and plays the move that maximises its tiles whilst scoring highest\
++ **Future Maximiser**: Looks into the future using the AI_tree_layers approach to maximise its tiles\
++ **Future Border**: : Looks into the future using the AI_tree_layers approach to maximise its score, score based off border_control\
++ **Future Border 2**:  : Looks into the future using the AI_tree_layers approach to maximise its score, score based off border_control_2\
++ **Oracle Maximiser**: Looks into the future using the class and a,b pruning approach to maximise its tiles\
++ **Oracle border**: Looks into the future using the class and a,b pruning approach to maximise its score, using a mixture of maximisation and protected_move_grid\
++ **Cheater**: runs cheater_code()
 
  
 ## Making moves(lines 922-1063)
