@@ -29,23 +29,23 @@ The overall function of the code is to allow the player to play against or watch
 
 
 ### Global variables: any variables that are used with global whilst in functions as they may need to be updated from inside a function.
-•	grid (this variable holds the grid, and each tile can be accessed with grid[row][column]\
-•	grid_last (this variable holds the previous grid, used for comparison, and can be accessed the same way)\
-•	turn (this variable shows the current turn, it is either 0 or 1)\
-•	ai_turn (this variable show whether the specific turn (turn 0 or 1) is to be played by a human or AI)\
-•	board_size (this variable decides the size of the board, the number of rows and columns (from 2 to 12))\ 
-•	default_animation_timer (this shows the value that the animation slider is set to when the start-screen is created)\
-•	initial_settings (this shows the value of the initial settings for purple and yellow in the start-screen)\
-•	AI_tree_layers (shows the number of layers that AIs that look into future moves will look)\
-•	options (this shows all of the different players and AIs that can be selected)\
-•	how_to_play_flag (this flag checks whether the how_to_play box is currently being shows or not)\
-•	Slide_flag (this shows the slide the player is on, from 0-6 (for slides 1-7) and is used to stop animations)\
-•	show_play_frame_frame (this is the frame that holds the show_play_frame which holds the how_to_play box)\
-•	game_frame_list (this holds the game_frames that the game is displayed in)\
-•	window_frame_frame (this holds the start of game screen)\
-•	results (this shows what the player has picked for who plays purple and orange)\
-•	animations_slider (this holds the animation slider which can be used to determine what the player has chosen the animation length to be)\
-•	board_size_slider (this holds the board_size slider which can be used to determine the board_size)
+•	**grid** (this variable holds the grid, and each tile can be accessed with grid[row][column]\
+•	**grid_last** (this variable holds the previous grid, used for comparison, and can be accessed the same way)\
+•	**turn** (this variable shows the current turn, it is either 0 or 1)\
+•	**ai_turn** (this variable show whether the specific turn (turn 0 or 1) is to be played by a human or AI)\
+•	**board_size** (this variable decides the size of the board, the number of rows and columns (from 2 to 12))\ 
+•	**default_animation_timer** (this shows the value that the animation slider is set to when the start-screen is created)\
+•	**initial_settings** (this shows the value of the initial settings for purple and yellow in the start-screen)\
+•	**AI_tree_layers** (shows the number of layers that AIs that look into future moves will look)\
+•	**options** (this shows all of the different players and AIs that can be selected)\
+•	**how_to_play_flag** (this flag checks whether the how_to_play box is currently being shows or not)\
+•	**Slide_flag** (this shows the slide the player is on, from 0-6 (for slides 1-7) and is used to stop animations)\
+•	**show_play_frame_frame** (this is the frame that holds the show_play_frame which holds the how_to_play box)\
+•	**game_frame_list** (this holds the game_frames that the game is displayed in)\
+•	**window_frame_frame** (this holds the start of game screen)\
+•	**results** (this shows what the player has picked for who plays purple and orange)\
+•	**animations_slider** (this holds the animation slider which can be used to determine what the player has chosen the animation length to be)\
+•	**board_size_slider** (this holds the board_size slider which can be used to determine the board_size)
  
 ## Overview of initial setup (lines 1-133)
 •	import useful packages\
