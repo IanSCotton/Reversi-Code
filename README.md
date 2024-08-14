@@ -90,10 +90,10 @@ The overall function of the code is to allow the player to play against or watch
 +	**Min_max(evaluation_grid, max_depth, alpha, beta, layers)**: uses a min_max algorithm with alpha beta pruning with recursion to fill out the evaluation_grid evaluations to help the best move returns an evaluation_grid with more evaluations\
 +	**Find_move(evaluation_grid)** after all the layers have been evaluated this returns the first move in the list that has an evaluation equal to the overall evaluation of the current position (the best move)
 +	**Cheater_code(move_list)**: This is complex enough to have its own subsection below, it either plays a random move returning the move or directly modifies the board with one of the functions below returning a pointless move [-2 ,-2]
-          -	**all_placer()**: this places a tile on every square where a legal move (*legal_moves()*) could be played returns the modified grid
-          -	**place_square()**: this places a square of size 2-4 somewhere on the board returns the modified grid
-          -	**flip_straight()**: this takes a random row or column and flips all of the tiles in it returns the modified grid
-          -	**smiley_face(grid, turn)**: this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
+            -	**all_placer()**: this places a tile on every square where a legal move (*legal_moves()*) could be played returns the modified grid
+            -	**place_square()**: this places a square of size 2-4 somewhere on the board returns the modified grid
+            -	**flip_straight()**: this takes a random row or column and flips all of the tiles in it returns the modified grid
+            -	**smiley_face(grid, turn)**: this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
 +	**ai_player(setting, layers, grid, turn, board_size)**: unless there’s cheating if there is only one move return that move otherwise return a move using the strategy of one of these AIs:
 
 ### AI list:
