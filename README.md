@@ -132,11 +132,11 @@ The overall function of the code is to allow the player to play against or watch
 
 ### Functions:
 +	**printer(legal_move_check, white_counters, black_counter, move_i, move_j, difference, difference_i, difference_j, animation_timer)**: uses legal_move_check to work out whether the game has ended or not, if it has display the winner and run create_end_game_box() update the number of counters for each player and whose turn it is run printer_update_grid() then run play_move if the game hasn’t ended, never returns
--	**play_again_command(master_frame)**: plays a new game with the same settings as the old one, creates a new grid with set_up_grid(), clears the old frame, runs print_initially(), deletes itself
--	**new_game_command()**: clears the current screen, creates a new grid with set_up_grid(), run create_game_frame_list(), run create_game_selection_screen()
-+	**create_end_game_box(larger, smaller**): creates box at the end of the game, shows the winner, the number of tiles each player has, has buttons to run play_again_command() or new_game_command and can be hidden with hide_command()
-+	**hide_command(main_Frame)**: hides the end_game_box, creates a button to run show_command() to bring it back
-+	**show_command(self_frame, larger, smaller)**:  shows the end_game_box by running create_end_game_box()
+    -	**play_again_command(master_frame)**: plays a new game with the same settings as the old one, creates a new grid with set_up_grid(), clears the old frame, runs print_initially(), deletes itself
+    -	**new_game_command()**: clears the current screen, creates a new grid with set_up_grid(), run create_game_frame_list(), run create_game_selection_screen()
+    -	**create_end_game_box(larger, smaller**): creates box at the end of the game, shows the winner, the number of tiles each player has, has buttons to run play_again_command() or new_game_command and can be hidden with hide_command()
+        -	**hide_command(main_Frame)**: hides the end_game_box, creates a button to run show_command() to bring it back
+        -	**show_command(self_frame, larger, smaller)**:  shows the end_game_box by running create_end_game_box()
 +	**printer_update_grid(master_frame, difference, difference_i, difference_j, move_i, move_j, animation_timer, grid)**: uses the differences between the current and previous position to update the grid, playing the update animation on the changed tiles and on the tile played on
 +	**print_initially(master_frame, grid_to_print, animation_timers, board_size)**: prints a grid onto a frame
 
