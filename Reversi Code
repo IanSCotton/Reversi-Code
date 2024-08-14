@@ -5,8 +5,8 @@ from tkinter import *
 from tkinter import font
 
 
-default_animation_timer = 0  # time tile turns black, time to change colour, was 300, 30
-initial_settings = ["Random", "Random"]  # initial game settings
+default_animation_timer = 35  # time tile turns black, time to change colour, was 300, 30
+initial_settings = ["Player", "Random"]  # initial game settings
 AI_tree_layers = [4, 4]
 
 # Dropdown menu options
@@ -25,12 +25,14 @@ options_strength_score = ["?", 1, 4, 5, "find", "find", "Hax",
 options_strategy_score = ["?", 0, 2, 6, 2, 9, "Hax",
                           1, 4, 1, 4, 5, 6, 8]
 options_tactics_score = ["?", 0, 5, 3, 5, 5, "Hax",
-                         0, 0, 0, 4, 7, 6, 8]
+                         0, 0, 0, 4, 7, 3, 4]
 options_depth_score = ["?", 0, 0, 0, 1, 1, "Hax",  # either 0, 1 or other depending on what it should be filled with
                        0, 0, 0, 0, 1, 1, 1]         # i.e. if it's a 1 then set it to AI_tree_layers
 
-max_values_strategy = ["", "", "", "", 5, 9]
-max_values_tactics = ["", "", "", "", 8, 10]
+max_values_strategy = ["", "", "", "", 5, 9, "",
+                       1, 4, 1, 4, 5, 7, 9]
+max_values_tactics = ["", "", "", "", 8, 10, "",
+                      0, 0, 0, 4, 7, 6, 8]
 
 options_descriptions = ["Only you can decide your fate",
                         "Plays a random move each time",
@@ -49,7 +51,7 @@ options_descriptions = ["Only you can decide your fate",
 
 # needed as this should be global
 grid = []
-board_size = 8
+board_size = 8  # set base value for board_size
 grid_last = []
 
 
@@ -817,7 +819,10 @@ def cheater_code(temp_move_list):
         chosen_smiley = ""  # to make python happy :)
         r_smiley = random.randint(0, 1)  # each with 1/2 odds it makes a pattern or all moves
         if r_smiley == 0:  # plays the pattern
-            chosen_smiley = smiley_array[r_smiley]
+            if board_size == 8:  # needs to play on 8*8 grid as the grids are hard-coded
+                chosen_smiley = smiley_array[r_smiley]
+            else:
+                r_smiley = 1
         if r_smiley == 1:  # plays all moves
             the_grid = all_placer()
             return the_grid, move
@@ -1075,10 +1080,12 @@ def printer(legal_moves_check, white_counter, black_counter,
 
     larger, smaller = black_counter, white_counter
     win_colour = "purple"
+    win_text_colour = "white"
 
     if not legal_moves_check:
         if white_counter > black_counter:
             turn_text = "Yellow wins!"
+            win_text_colour = "black"
             end = True
             # swap the order as yellow won and set colour if yellow wins
             larger, smaller, win_colour = white_counter, black_counter, "yellow"
@@ -1088,6 +1095,7 @@ def printer(legal_moves_check, white_counter, black_counter,
         if not end:
             turn_text = "It's a draw"
             win_colour = "grey"
+            win_text_colour = "black"
 
     def play_again_command(master_frame):
         global grid
@@ -1141,7 +1149,7 @@ def printer(legal_moves_check, white_counter, black_counter,
         end_of_game_font = font.Font(family="Arial", size=30, weight="bold")  # create font for the title
 
         winning_player_label = tk.Label(master=end_of_game_frame, text=f"{turn_text}", font=end_of_game_font,
-                                        bg=win_colour)
+                                        bg=win_colour, fg=f"{win_text_colour}")
         winning_player_label.grid(row=0, column=0)
 
         tile_counter_font = font.Font(family="Arial", size=25, weight="bold")  # create font for the title
@@ -1155,7 +1163,7 @@ def printer(legal_moves_check, white_counter, black_counter,
                                       play_again_command(master_frame))
         play_again_button.grid(row=2, column=0)
 
-        new_game_button = tk.Button(master=end_of_game_frame, text="New game", font=tile_counter_font, bg="gray",
+        new_game_button = tk.Button(master=end_of_game_frame, text="New game", font=tile_counter_font, bg="grey",
                                     command=new_game_command)
         new_game_button.grid(row=4, column=0)
 
@@ -1199,7 +1207,7 @@ def printer(legal_moves_check, white_counter, black_counter,
     # code for the number of colours of either type
     counters = [f"There are {white_counter} yellow counters", f"There are {black_counter} purple counters", turn_text]
     colours_scoreboard = ["orange", "purple"]
-    font_colours = ["black", "darkgray"]
+    font_colours = ["black", "white"]
 
     # create scoreboard
     scoreboard_font = font.Font(family="arial", size=13)
@@ -1225,16 +1233,17 @@ def printer_update_grid(master_frame, difference, difference_i, difference_j,
     colour_list_bw = ["#800080", "#951c6b", "#aa37ff", "#c05340", "#d56e2b", "#ea8a15",
                       "#ffa500"]  # colours to switch from purple to yellow
 
-    # update the grid 1.) Remove old buttons, 2.) Change square clicked on, 3.) Change colours, 4.) new valid squares
+    # update the grid: 1.) Remove old buttons, 2.) Change square clicked on, 3.) Change colours, 4.) new valid squares
     for length in range(0, len(difference)):
         if difference[length] != "0":  # check there are differences
             continue
-        button_list = tk.Button(master=master_frame, bg="gray", relief="solid")
+        button_list = tk.Button(master=master_frame, bg="grey", relief="solid")
         button_list.grid(row=difference_i[length], column=difference_j[length], sticky="news")
 
     if move_i > -1 and ai_turn[swap_turn(turn)[0]]:  # check the AI played a legal move, show their move
         button_list = tk.Button(master=master_frame, bg="black", relief="solid")
         button_list.grid(row=move_i, column=move_j, sticky="news")
+
         master_frame.update()
         master_frame.after(animation_timer[0]*6)  # pause after the move to allow the player to see it
 
@@ -1285,7 +1294,7 @@ def print_initially(master_frame, grid_to_print, animation_timers, the_board_siz
                                            command=lambda i_val=i, j_val=j:
                                            play_move(i_val, j_val, True, animation_timers))
             if grid_to_print[i][j] == "0":
-                grid_maker = tk.Button(master=master_frame, bg="gray", relief="solid")
+                grid_maker = tk.Button(master=master_frame, bg="grey", relief="solid")
             grid_maker.grid(row=i, column=j, sticky="news")
 
 
@@ -1338,7 +1347,7 @@ def start_game(frame_to_destroy):
 
 def create_outside_frame_box(master_frame):
 
-    size_guide_rows = [5, 55, 290, 100, 50, 80, 30, 5]
+    size_guide_rows = [5, 55, 290, 100, 50, 80, 40, 5]
     size_guide_columns = [5, 480, 5]  # middle should be about 480 + whatever else is added
 
     for rows in range(len(size_guide_rows)):  # create the border around the window_frame
@@ -1362,15 +1371,24 @@ def create_title(master_frame):
     title.grid(row=0, column=0, columnspan=1)  # add the title to the grid spanning all 9 columns
 
 
+def decode_background_colour(colour):
+    # decode background_colour
+    text_colour = "white"
+    side = 0
+    if colour == "orange":
+        side = 1
+        text_colour = "black"
+
+    return side, text_colour
+
+
 # create function that creates the drop_down menus
 def create_custom_drop_down_menu(master_frame, background_colour,
                                  strength_score, strategy_score, tactics_score, depth_score_entry, depth_score_label,
                                  description):
 
     # decode background_colour
-    side = 1
-    if background_colour == "purple":
-        side = 0
+    side, text_colour = decode_background_colour(background_colour)
 
     def show_menu(event):
         # Create the dropdown menu
@@ -1415,7 +1433,7 @@ def create_custom_drop_down_menu(master_frame, background_colour,
 
     chosen_label_font = font.Font(family="Arial", size=14, weight="bold", underline=True)  # create font for the title
     chosen_label = tk.Label(master_frame, text=result.get(),
-                            background=background_colour, font=chosen_label_font)
+                            background=background_colour, font=chosen_label_font, foreground=text_colour)
     chosen_label.bind("<Button-1>", show_menu)  # bind the show_menu function to left-clicking on the label
 
     return chosen_label, result  # return the chosen_label for placing in the grid and the results for .get()
@@ -1430,6 +1448,8 @@ def round_up(number):  # used to round-up numbers, used in 2 functions below
 def find_true_value(variable, score_array, limit_array, index, side):  # used to find true value of a score display
 
     if options_depth_score[index] == 1:  # has changeable depth score
+
+        # the score is the minimum of the max_score for this and their base score + depth - 1
         score = round_up(
             min(int(round_up(score_array[index]) + int(AI_tree_layers[side]) - 1), int(limit_array[index])))
         score = int(score)
@@ -1459,10 +1479,8 @@ def find_strength_value(index, side, strength_score):  # used to find the true s
 
 def fill_choose_player_box(master_frame, background_colour):
 
-    # decode background_colour
-    side = 0
-    if background_colour == "yellow":
-        side = 1
+    # decode background_colour and decide text colour
+    side, text_colour = decode_background_colour(background_colour)
 
     # creates the grid to contain everything and the size of each row and column
     size_guide_rows = [70, 30, 30, 30, 30, 90]
@@ -1478,7 +1496,7 @@ def fill_choose_player_box(master_frame, background_colour):
         the_font = font.Font(family="Arial", size=font_size, weight="bold")  # create font for the title
         if setting == "label":
             the_stat = tk.Label(master=master_frame, text=f"{text}", font=the_font, background=f"{background_colour}",
-                                wraplength=190)
+                                wraplength=190, foreground=f"{text_colour}")
 
         else:  # if it's an entry rather than a label
             def update_global_ai_tree_layers(*args):  # pass any number of arguments into function
@@ -1533,7 +1551,7 @@ def fill_choose_player_box(master_frame, background_colour):
             the_stat_pointer = StringVar()  # set a StringVar() to be referred to later (with .get())
             the_stat_pointer.set(AI_tree_layers[side])  # set its value
             the_stat = Entry(master=master_frame, width=1, font=the_font, background=f"{background_colour}",
-                             textvariable=the_stat_pointer)  # create the Entry
+                             textvariable=the_stat_pointer, foreground=f"{text_colour}")  # create the Entry
 
             # add the trace to call function when it's updated
             the_stat_pointer.trace("w", update_global_ai_tree_layers)
@@ -1541,11 +1559,6 @@ def fill_choose_player_box(master_frame, background_colour):
         the_stat.grid(row=row, column=column, columnspan=columnspan)
 
         return the_stat
-
-    # decode background_colour
-    side = 1
-    if background_colour == "purple":
-        side = 0
 
     # find the base settings
     index = 0  # to make python happy :)
@@ -1579,7 +1592,7 @@ def fill_choose_player_box(master_frame, background_colour):
         depth_score_entry.grid_forget()
 
     # the text to describe the AI
-    description = place_stats(5, 0, 4, 8, options_descriptions[index], "label")
+    description = place_stats(5, 0, 4, 10, options_descriptions[index], "label")
 
     chosen_player, result = create_custom_drop_down_menu(master_frame, background_colour,
                                                          strength_score, strategy_score, tactics_score,
@@ -1684,9 +1697,9 @@ def create_start_game_box(master_frame, master_master_frame):  # create box to h
 
 
 def show_all_ai_button(master_frame):
-    start_game_font = font.Font(family="Arial", size=8, weight="bold")  # create font for the start_game_box
+    start_game_font = font.Font(family="Arial", size=12, weight="bold")  # create font for the start_game_box
     button = tk.Button(master=master_frame, text="Show all AIs", font=start_game_font,
-                       background="lightgray", command=lambda: show_all_ai_command(button, master_frame))
+                       background="lightgrey", command=lambda: show_all_ai_command(button, master_frame))
     button.grid(row=0, column=0, columnspan=1)
 
     # set column widths
@@ -1706,9 +1719,9 @@ def show_all_ai_command(self, master_frame):
 
 
 def how_to_play_button(master_frame):
-    start_game_font = font.Font(family="Arial", size=8, weight="bold")  # create font for the start_game_box
+    start_game_font = font.Font(family="Arial", size=12, weight="bold")  # create font for the start_game_box
     button = tk.Button(master=master_frame, text="How to Play", font=start_game_font,
-                       background="lightgray", command=lambda number=0: how_to_play_command(number, False))
+                       background="lightgrey", command=lambda number=0: how_to_play_command(number, False))
     button.grid(row=0, column=2, columnspan=1)
 
 
@@ -1717,50 +1730,32 @@ def close_how_to_play(master_frame):
     global how_to_play_flag
     how_to_play_flag = False
 
-    global not_2_flag  # flag for when it isn't slide 2
-    global not_3_flag  # flag for when it isn't slide 3
-    not_2_flag = True
-    not_3_flag = True
+    global slide_flag
+    slide_flag = 0
 
     master_frame.grid_forget()  # forget the frame
 
 
 def next_image(number):
 
-    global not_2_flag  # set flags to stop the animations of slides 2 and 3
-    not_2_flag = True
-
-    global not_3_flag
-    not_3_flag = True
+    global slide_flag
 
     if number < 7 - 1:  # if we can go to the next image
         number = number + 1
 
-        if number == 1:  # if it is slide 2 set the flag to False so the animation runs
-            not_2_flag = False
-
-        if number == 2:
-            not_3_flag = False
+        slide_flag = slide_flag + 1
 
         how_to_play_command(number, True)
 
 
 def previous_image(number):
 
-    global not_2_flag  # set flags to stop the animations of slides 2 and 3
-    not_2_flag = True
-
-    global not_3_flag
-    not_3_flag = True
+    global slide_flag
 
     if number > 0:  # if we can go to the next image
         number = number - 1
 
-        if number == 1:  # if it is slide 2 set the flag to False so the animation runs
-            not_2_flag = False
-
-        if number == 2:
-            not_3_flag = False
+        slide_flag = slide_flag - 1
 
         how_to_play_command(number, True)
 
@@ -1827,8 +1822,8 @@ def how_to_play_command(current_image, internal):
 
     # text
     text_text = "bug :(<"
-    text = tk.Label(master=show_play_frame_frame, text=text_text, wraplength=230, bg="lightblue")
-    text.grid(row=3, column=1)
+    text = tk.Label(master=show_play_frame_frame, text=text_text, wraplength=300, bg="lightblue")
+    text.grid(row=3, column=0, columnspan=3)
 
     # slide counter
     slide_counter = tk.Label(master=show_play_frame_frame, text=f"{current_image + 1}/7", wraplength=230,
@@ -1848,9 +1843,9 @@ def how_to_play_command(current_image, internal):
     # create functions to show the slides on how to play the game
     def how_to_play_slide_1():
 
-        text.configure(text="When it's your turn play a legal move by clicking on one of the white squares. "
+        text.configure(text="When it's your turn play a legal move by clicking on one of the white squares. \n"
                             "Moves are legal when one or more of the opponent's tiles are surrounded on a line by"
-                            " the new tile and an old tile")
+                            " the new tile and one of your old tiles")
 
         slide_1_grid = [["B", "W", "W", "W", "W", "W", "W", "0"],
                         ["W", "W", "0", "0", "0", "0", "0", "0"],
@@ -1886,7 +1881,7 @@ def how_to_play_command(current_image, internal):
         new_slide_2_grid = grid_changer(7, 7, new_slide_2_grid, 0, 8)  # play in the bottom right
         new_slide_2_grid = legal_moves(new_slide_2_grid, 1, 8)  # get the new legal moves
 
-        while not not_2_flag:  # keep running the animation
+        while slide_flag == 1:  # keep running the animation
 
             white_counter, black_counter, difference_i, difference_j, difference, legal_moves_check \
                 = difference_finder(new_slide_2_grid, slide_2_grid, 8)  # find the differences
@@ -1897,7 +1892,7 @@ def how_to_play_command(current_image, internal):
             # wait to give time for them to see it
 
             for i in range(20):
-                if not not_2_flag:
+                if slide_flag == 1:
                     show_play_frame.after(100)
                 else:
                     break
@@ -1910,7 +1905,7 @@ def how_to_play_command(current_image, internal):
             # wait to give time for them to see it
             show_play_frame.after(2000)
             for i in range(20):
-                if not not_2_flag:
+                if slide_flag == 1:
                     show_play_frame.after(100)
                 else:
                     break
@@ -1918,7 +1913,7 @@ def how_to_play_command(current_image, internal):
     def how_to_play_slide_3():
         text.configure(text="Players take turns placing tiles, purple goes first and orange goes second")
 
-        while not not_3_flag:
+        while slide_flag == 2:
             # set the original position
             pointless_board_size, slide_3_grid, pointless_grid_last = set_up_grid(8)
 
@@ -1929,7 +1924,7 @@ def how_to_play_command(current_image, internal):
 
             turn_colours = ["Purple", "Orange"]
 
-            while not not_3_flag:  # keep running the animation
+            while slide_flag == 2:  # keep running the animation
 
                 old_slide_3_grid = copy.deepcopy(slide_3_grid)
 
@@ -1952,13 +1947,13 @@ def how_to_play_command(current_image, internal):
                 printer_update_grid(show_play_frame, difference, difference_i, difference_j,
                                     move_i, move_j, [35, 100], slide_3_grid)
 
-                for i in range(20):
-                    if not not_3_flag:
+                for i in range(20):  # pause to allow them to see it
+                    if slide_flag == 2:  # don't pause if the animation is no longer showing
                         show_play_frame.after(100)
                     else:
                         break
 
-                if not move_list_finder(slide_3_grid, 8):
+                if not move_list_finder(slide_3_grid, 8):  # if the game has ended break
                     break
 
     def how_to_play_slide_4():
@@ -2048,6 +2043,12 @@ def how_to_play_command(current_image, internal):
 
 # set up the window for everything
 window = tk.Tk()
+
+# set window to fit screen
+window_height = window.winfo_screenheight() - 20
+window_width = window.winfo_screenwidth() - 20
+window.geometry(f"{window_width}x{window_height}")
+
 window.configure(bg="#D3D3D3")   # old was #D3D3D3
 
 
@@ -2131,8 +2132,7 @@ board_size_slider = Scale()
 show_play_frame_frame = tk.Frame
 
 how_to_play_flag = False
-not_2_flag = False
-not_3_flag = False
+slide_flag = 0
 
 create_game_selection_screen()  # create the game selection screen
 
