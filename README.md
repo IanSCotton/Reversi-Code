@@ -90,10 +90,10 @@ The overall function of the code is to allow the player to play against or watch
 +	**Min_max(evaluation_grid, max_depth, alpha, beta, layers)**: uses a min_max algorithm with alpha beta pruning with recursion to fill out the evaluation_grid evaluations to help the best move returns an evaluation_grid with more evaluations\
 +	**Find_move(evaluation_grid)** after all the layers have been evaluated this returns the first move in the list that has an evaluation equal to the overall evaluation of the current position (the best move)
 +	**Cheater_code(move_list)**: This is complex enough to have its own subsection below, it either plays a random move returning the move or directly modifies the board with one of the functions below returning a pointless move [-2 ,-2]
-+	**all_placer()**: this places a tile on every square where a legal move could be played returns the modified grid
-+	**place_square()**: this places a square of size 2-4 somewhere on the board returns the modified grid
-+	**flip_straight()**: this takes a random row or column and flips all of the tiles in it returns the modified grid
-+	**smiley_face(grid, turn)**: this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
+        -	**all_placer()**: this places a tile on every square where a legal move could be played returns the modified grid
+        -	**place_square()**: this places a square of size 2-4 somewhere on the board returns the modified grid
+        -	**flip_straight()**: this takes a random row or column and flips all of the tiles in it returns the modified grid
+        -	**smiley_face(grid, turn)**: this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
 +	**ai_player(setting, layers, grid, turn, board_size)**: unless there’s cheating if there is only one move return that move otherwise return a move using the strategy of one of these AIs:
 
 ### AI list:
@@ -167,13 +167,13 @@ the drop-down menu creates a menu that allows the player to pick from a number o
 +	**next_image(number)**: when ran this goes to the next number in the image list if there is one, and runs how_to_play_command with the new number and updates the slide_flag and never returns
 +	**previous_image(number)**: when ran this goes to the previous  number in the image list if there is one, and runs how_to_play_command with the new number and updates the slide flag and never returns
 +	**how_to_play_command(current_image, internal)**: if the global how_to_play_flag is True and its not being run from an internal next_image or previous_image command it returns immediately otherwise it creates a new frame with 3 buttons to run close_how_to_play, previous_image and next_image and sets column and row sizes. Never returns
-+	it has 7 sub_functions to show each slide, how_to_play_slide_1(): prints a grid (print_initially()) with the legal moves (legal_moves()) on it
-+	**how_to_play_slide_2()**: prints a grid and shows the same move being played on it repeatedly using legal_moves(), print_initially(), grid_changer(), difference_finder(), printer_update_grid()
-+	**how_to_play_slide_3()**: plays a game on a grid of tile maximiser vs border control, using set_up_grid(), legal_moves(), print_initially(), ai_player(), grid_changer(), swap_turn(), differences(), printer_update_grid(), move_list_finder()
-+	**how_to_play_slide_4()**: shows a grid with no legal moves for purple using legal_moves(), print_initially()
-+	**how_to_play_slide_5()**: shows a grid where purple has won, using print_initially()
-+	**how_to_play_slide_6()**: shows text
-+	**how_to_play_slide_7()**: shows text
+    -   **how_to_play_slide_1()**: prints a grid (print_initially()) with the legal moves (legal_moves()) on it
+    -	**how_to_play_slide_2()**: prints a grid and shows the same move being played on it repeatedly using legal_moves(), print_initially(), grid_changer(), difference_finder(), printer_update_grid()
+    -	**how_to_play_slide_3()**: plays a game on a grid of tile maximiser vs border control, using set_up_grid(), legal_moves(), print_initially(), ai_player(), grid_changer(), swap_turn(), differences(), printer_update_grid(), move_list_finder()
+    -	**how_to_play_slide_4()**: shows a grid with no legal moves for purple using legal_moves(), print_initially()
+    -	**how_to_play_slide_5()**: shows a grid where purple has won, using print_initially()
+    -	**how_to_play_slide_6()**: shows text
+    -	**how_to_play_slide_7()**: shows text
 +	not a function but the window is created with height and width to mostly fill the screen
 +	**create_game_frame_list()**: creates the global list of frames for the game that are used later. Never returns
 +	**create_game_selection_screen()**: this creates the screen for the start of the game where all the settings can be chosen. It runs create_game_frame_list, create_outside_frame_box, create_title, create_player_chooser_boxes, create_animation_box, create_start_game_box, show_all_ai_button, how_to_play_button and never returns
