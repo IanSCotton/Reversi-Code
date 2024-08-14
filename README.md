@@ -80,7 +80,7 @@ The overall function of the code is to allow the player to play against or watch
 +	**fill_bottom_tree_border(game_tree, layers)** fill the bottom of the game_tree using the border_control method to assign points to each board returns the game tree
 +	**future_border_test(layers)**: uses *create_tree()*, *fill_bottom_tree_border()* and *solve_tree()* to create fill and solve the tree to return the best move
 +	**fill_bottom_tree_border_2(game_tree, layers)** fills the bottom of the game_tree with scores based on the protected_move_grids and the number of tiles returns game_tree
-+	**future_border_test_2(layers)**: uses *create_tree*, *fill_bottom_tree_border_2()* and *solve_tree()* to create fill and solve the tree to return the best move
++	**future_border_test_2(layers)**: uses *create_tree()*, *fill_bottom_tree_border_2()* and *solve_tree()* to create fill and solve the tree to return the best move
 +	**find_score_board_maximiser(grid)** this returns a score for a grid based on the ratio between the number of black and white tiles returns the score
 +	**find_score_border(grid, protected_move_grid)** uses the protected_move_grid, the number of tiles of each colour, a list of bad and very bad tiles to return a score for the board
 +	**class EvaluationGrids(grid, current_depth, turn, target_depth, setting)**: this class contains data for all of the inputted variables as well as the associated protected_move_grid, any grids directly formed from playing moves on the grid and an evaluation of the current position if current_depth=target_depth
