@@ -119,24 +119,24 @@ The overall function of the code is to allow the player to play against or watch
 
 
 ### Functions:
-+	**play_move(i, j, legal_moves_check, animation_timer)**:  runs updater, checks for legal moves, if there are none it runs updater(i, j, legal_moves_check) (this time for the other player) it then runs printer updating the board never returns
++	**play_move(i, j, legal_moves_check, animation_timer)**:  *runs _updater()*, checks for legal moves with *legal_moves()*, if there are none it runs *updater(i, j, legal_moves_check)* (this time for the other player) it then runs *printer()* updating the board never returns
 +	**grid_changer(i, j, grid, turn, board_size)**: updates the cell and all cells around it returns the new grid
 +	**legal_moves_of_cell(grid, turn, i, j, board_size)** finds whether a specific cell (i,j) has any legal moves, if so it sets it to “v”, returns the new grid
-+	**legal_moves(grid, turn, board_size)**: uses legal_moves_of_cell to find all of the legal moves of the board returns the new grid
++	**legal_moves(grid, turn, board_size)**: uses *legal_moves_of_cell()* to find all of the legal moves of the board returns the new grid
 +	**difference_finder(grid, last_grid, board_size)** compares the current and former grid to find any differences, counts the tiles and checks for legal moves returns the number of white tiles, the number of black tiles, the differences(in terms of i) the differences(in terms of j) the new tiles they changes to and whether there are legal moves
-+	**updater(i, j, legal_moves_check)**: creates a copy of the current board, gets the move as necessary with ai_player, updates the grid with grid_changer, swaps the turn with swap_turn, finds the legal moves of the grid with legal_moves, finds the differences between the new and old grid with difference_finder returns whether there are legal moves, the number of white tiles, the number of black tiles, the move that was played in terms of (i and j), the differences(in terms of i) the differences(in terms of j) the new tiles they changes
++	**updater(i, j, legal_moves_check)**: creates a copy of the current board, gets the move as necessary with *ai_player()*, updates the grid with *grid_changer()*, swaps the turn with *swap_turn()*, finds the legal moves of the grid with *legal_moves()*, finds the differences between the new and old grid with *difference_finder()* returns whether there are legal moves, the number of white tiles, the number of black tiles, the move that was played in terms of (i and j), the differences(in terms of i) the differences(in terms of j) the new tiles they changes
 
 
 ## Printing the board (lines 1066-1295):
 +	prints the board for players to make moves on, and shows the number of tiles and who won
 
 ### Functions:
-+	**printer(legal_move_check, white_counters, black_counter, move_i, move_j, difference, difference_i, difference_j, animation_timer)**: uses legal_move_check to work out whether the game has ended or not, if it has display the winner and run create_end_game_box() update the number of counters for each player and whose turn it is run printer_update_grid() then run play_move if the game hasn’t ended, never returns
-    -	**play_again_command(master_frame)**: plays a new game with the same settings as the old one, creates a new grid with set_up_grid(), clears the old frame, runs print_initially(), deletes itself
-    -	**new_game_command()**: clears the current screen, creates a new grid with set_up_grid(), run create_game_frame_list(), run create_game_selection_screen()
-    -	**create_end_game_box(larger, smaller**): creates box at the end of the game, shows the winner, the number of tiles each player has, has buttons to run play_again_command() or new_game_command and can be hidden with hide_command()
-        -	**hide_command(main_Frame)**: hides the end_game_box, creates a button to run show_command() to bring it back
-        -	**show_command(self_frame, larger, smaller)**:  shows the end_game_box by running create_end_game_box()
++	**printer(legal_move_check, white_counters, black_counter, move_i, move_j, difference, difference_i, difference_j, animation_timer)**: uses legal_move_check to work out whether the game has ended or not, if it has display the winner and run *create_end_game_box()* update the number of counters for each player and whose turn it is run *printer_update_grid()* then run *play_move()* if the game hasn’t ended, never returns
+    -	**play_again_command(master_frame)**: plays a new game with the same settings as the old one, creates a new grid with *set_up_grid()*, clears the old frame, runs *print_initially()*, deletes itself
+    -	**new_game_command()**: clears the current screen, creates a new grid with *set_up_grid()*, run *create_game_frame_list()*, run *create_game_selection_screen()*
+    -	**create_end_game_box(larger, smaller**): creates box at the end of the game, shows the winner, the number of tiles each player has, has buttons to run *play_again_command()* or *new_game_command()* and can be hidden with *hide_command()*
+        -	**hide_command(main_Frame)**: hides the end_game_box, creates a button to run *show_command()* to bring it back
+        -	**show_command(self_frame, larger, smaller)**:  shows the end_game_box by running *create_end_game_box()*
 +	**printer_update_grid(master_frame, difference, difference_i, difference_j, move_i, move_j, animation_timer, grid)**: uses the differences between the current and previous position to update the grid, playing the update animation on the changed tiles and on the tile played on
 +	**print_initially(master_frame, grid_to_print, animation_timers, board_size)**: prints a grid onto a frame
 
@@ -145,40 +145,40 @@ The overall function of the code is to allow the player to play against or watch
 +	The start screen allows the player to decide on which AIs/the player plays purple and yellow and gives stats and descriptions, it also allows the player to select animation lengths, board size and show all AIs with a button and create a pop-up with 7 slides that explains how to play the game.
 
 ### Functions:
-+	**start_game(frame_to_destroy)**: starts the game by clearing the start_screen, setting up variables: animation_timers, ai_turn, grid, grid_last, board_size, initial_settings, with .get(), sets up grid with set_up_grid(), prints the board with print_initially() and plays the 1st move with play_move() never returns
++	**start_game(frame_to_destroy)**: starts the game by clearing the start_screen, setting up variables: animation_timers, ai_turn, grid, grid_last, board_size, initial_settings, with .get(), sets up grid with *set_up_grid()*, prints the board with *print_initially()* and plays the 1st move with *play_move()* never returns
 +	**create_outside_frame_box(master_frame)**: create a box to hold the frames for the start-menu with the outside being frames with colour black to appear as an outline, set the size of rows and columns. It never returns.
 +	**create_title(master_frame)**: set the font and create the label for the title “Reversi!” to be placed in the title box it never returns
 +	**decode_background_colour(colour)**: takes a colour (purple or orange) and returns their side(0 or 1) and the text_colour (white or black)
 +	**create_custom_drop_down_menu(master_frame, background_colour, strength_score, cunning_score, depth_score, random_score, description)** I didn’t like the look of the standard drop-down menu so this replaces it. Inside of it two functions are defined:\
         -	**Show_menu(event)**: this creates a menu that appears at the mouse when created filled with options, the options have the command select_option
         -	**Select_option(chosen_option)**: this updates the label with the chosen option and updates result as this is needed to pick the AI later, it then updates the stats
-the drop-down menu creates a menu that allows the player to pick from a number of options, it then updates the rest of the information in the box and sets the result to be accessed later returns chosen¬_label and result
+the drop-down menu creates a menu that allows the player to pick from a number of options, it then updates the rest of the information in the box and sets the result to be accessed later returns chosen-label and result
 +	**round_up(number)**: rounds a number up returns number
 +	**find_true_value(variable, score_array, limit_array, index, side)**: decides the true value of a score based on the depth never returns
 +	**find_strength_value(index, side, strength_score)** finds the true strength value depending on the depth and the strategy and tactics score, never returns
-+	**fill_chosen_player_box(master_frame, background_colour)**: this fills the box to show the chosen player for each side, it sets the column and row sizes, and uses new function place_stats() and adds drop down menus with create_custom_drop_down_menu. Returns result
++	**fill_chosen_player_box(master_frame, background_colour)**: this fills the box to show the chosen player for each side, it sets the column and row sizes, and uses new function *place_stats()* and adds drop down menus with *create_custom_drop_down_menu()*. Returns result
         - **place_stats(row, column, columnspan, font_size, text, setting)**: places a label/Entry with a specific font, font_size and background at a specific place in the grid taking up a certain number of columns.  if setting=”label” it creates a label, if it’s entry then it creates an entry that can be changed by clicking on it and runs
  	        - **update_global_ai_tree_layers(\*args)**  updates AI_tree_layers for that side if a valid number is entered.
-+	**create_player_chooser_boxes(master_frame)**: creates the boxes that holds the choices of which AI/player plays each side, it uses a number of frames, the outside are black to create a border whilst the insides are to be filled later using fill_chosen_player_box returns the result_list so it can be used later with .get() to find out who is playing purple and yellow
++	**create_player_chooser_boxes(master_frame)**: creates the boxes that holds the choices of which AI/player plays each side, it uses a number of frames, the outside are black to create a border whilst the insides are to be filled later using *fill_chosen_player_box()* returns the result_list so it can be used later with .get() to find out who is playing purple and yellow
 +	**create_slider_box(master_frame, setting)**: create the box and a slider inside of it (animation or board_size), return the slider so its value can be accessed later with .get()
-+	**create_start_game_box(master_frame, master_master_frame)** this box holds the start_game_button and runs start_game which destroys the master_master_frame never returns
++	**create_start_game_box(master_frame, master_master_frame)** this box holds the start_game_button and runs *start_game()* which destroys the master_master_frame never returns
 +	**show_all_ai_button(master_frame)**: create the button that when pressed adds all AIs to the options list so they can all be selected by running show_all_ai_command once pressed this disappears never returns
 +	**show_all_ai_command(self, master_frame)**: this command destroys itself and updates the global options never retuns
-+	**how_to_play_button(master_frame)**: this command creates a button with a specific font to be pressed which runs command how_to_play_command which has a number of frames explaining how to play the game never returns
++	**how_to_play_button(master_frame)**: this command creates a button with a specific font to be pressed which runs command *how_to_play_command()* which has a number of frames explaining how to play the game never returns
 +	**close_how_to_play(master_frame)**: this command hides the frame and sets the global how_to_play_flag to False so that a new how_to_play window can be created and updates the slide_flag never returns
-+	**next_image(number)**: when ran this goes to the next number in the image list if there is one, and runs how_to_play_command with the new number and updates the slide_flag and never returns
-+	**previous_image(number)**: when ran this goes to the previous  number in the image list if there is one, and runs how_to_play_command with the new number and updates the slide flag and never returns
-+	**how_to_play_command(current_image, internal)**: if the global how_to_play_flag is True and its not being run from an internal next_image or previous_image command it returns immediately otherwise it creates a new frame with 3 buttons to run close_how_to_play, previous_image and next_image and sets column and row sizes. Never returns
-    -   **how_to_play_slide_1()**: prints a grid (print_initially()) with the legal moves (legal_moves()) on it
-    -	**how_to_play_slide_2()**: prints a grid and shows the same move being played on it repeatedly using legal_moves(), print_initially(), grid_changer(), difference_finder(), printer_update_grid()
-    -	**how_to_play_slide_3()**: plays a game on a grid of tile maximiser vs border control, using set_up_grid(), legal_moves(), print_initially(), ai_player(), grid_changer(), swap_turn(), differences(), printer_update_grid(), move_list_finder()
-    -	**how_to_play_slide_4()**: shows a grid with no legal moves for purple using legal_moves(), print_initially()
-    -	**how_to_play_slide_5()**: shows a grid where purple has won, using print_initially()
++	**next_image(number)**: when ran this goes to the next number in the image list if there is one, and runs *how_to_play_command()* with the new number and updates the slide_flag and never returns
++	**previous_image(number)**: when ran this goes to the previous  number in the image list if there is one, and runs *how_to_play_command()* with the new number and updates the slide flag and never returns
++	**how_to_play_command(current_image, internal)**: if the global how_to_play_flag is True and its not being run from an internal next_image or previous_image command it returns immediately otherwise it creates a new frame with 3 buttons to run *close_how_to_play()*, *previous_image()* and *next_image()* and sets column and row sizes. Never returns
+    -   **how_to_play_slide_1()**: prints a grid (*print_initially()*) with the legal moves (*legal_moves()*) on it
+    -	**how_to_play_slide_2()**: prints a grid and shows the same move being played on it repeatedly using *legal_moves()*, *print_initially()*, *grid_changer()*, *difference_finder()*, *printer_update_grid()*
+    -	**how_to_play_slide_3()**: plays a game on a grid of tile maximiser vs border control, using *set_up_grid()*, *legal_moves()*, *print_initially()*, *ai_player()*, *grid_changer()*, *swap_turn()*, *differences()*, *printer_update_grid()*, *move_list_finder()*
+    -	**how_to_play_slide_4()**: shows a grid with no legal moves for purple using *legal_moves()*, *print_initially()*
+    -	**how_to_play_slide_5()**: shows a grid where purple has won, using *print_initially()*
     -	**how_to_play_slide_6()**: shows text
     -	**how_to_play_slide_7()**: shows text
 +	not a function but the window is created with height and width to mostly fill the screen
 +	**create_game_frame_list()**: creates the global list of frames for the game that are used later. Never returns
-+	**create_game_selection_screen()**: this creates the screen for the start of the game where all the settings can be chosen. It runs create_game_frame_list, create_outside_frame_box, create_title, create_player_chooser_boxes, create_animation_box, create_start_game_box, show_all_ai_button, how_to_play_button and never returns
++	**create_game_selection_screen()**: this creates the screen for the start of the game where all the settings can be chosen. It runs *create_game_frame_list()*, *create_outside_frame_box()*, *create_title()*, *create_player_chooser_boxes()*, *create_animation_box()*, *create_start_game_box()*, *show_all_ai_button()*, *how_to_play_button()* and never returns
 +	not a function but: game_frame_list, window_frame_frame, results, animation_slider, board_size_slider, show_play_frame_frame, how_to_play_flag, slide_flag are put in global scope
 
 ### Other:
