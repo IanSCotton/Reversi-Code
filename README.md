@@ -3,12 +3,12 @@ The overall function of the code is to allow the player to play against or watch
 
 ## Functions of the code:
 ### Pre-game:
-•	The player can choose from a wide array of AIs and themselves who will play as purple (going first) and who will play as yellow (going second), each AI has specific stats and descriptions. \
-•	The player can use a slider to decide on the lengths of animations from 0-100 (milliseconds)\
-•	The player can click on a button that shows how to play, it has seven panels simply explaining the game\
-•	The player can decide on the size of the board they will be playing on, from 2\*2-12\*12\
-•	The player can click on a button that shows all AIs, once pressed this cannot be unpressed and will allow the player to choose a wider array of AIs to play against\
-•	The player can start the game
++The player can choose from a wide array of AIs and themselves who will play as purple (going first) and who will play as yellow (going second), each AI has specific stats and descriptions. \
++	The player can use a slider to decide on the lengths of animations from 0-100 (milliseconds)\
++	The player can click on a button that shows how to play, it has seven panels simply explaining the game\
++	The player can decide on the size of the board they will be playing on, from 2\*2-12\*12\
++	The player can click on a button that shows all AIs, once pressed this cannot be unpressed and will allow the player to choose a wider array of AIs to play against\
++	The player can start the game
 
 ### In game:
 •	The code allows people to play games of Reversi, inside games players do this by clicking on white tiles when it is their turn, the effect of the moves and the legal moves are calculated by the programme.\
