@@ -110,12 +110,12 @@ Future Border: : Looks into the future using the AI_tree_layers approach to maxi
 Future Border 2:  : Looks into the future using the AI_tree_layers approach to maximise its score, score based off border_control_2\
 Oracle Maximiser: Looks into the future using the class and a,b pruning approach to maximise its tiles\
 Oracle border: Looks into the future using the class and a,b pruning approach to maximise its score, using a mixture of maximisation and protected_move_grid\
-Cheater: runs cheater_code()\
+Cheater: runs cheater_code()
 
  
 ## Making moves(lines 922-1063)
 •	Define the overall play_move function which manages the rest of this section, it runs updater, checks for legal moves, if there are none it runs updater (this time for the other player) it then runs printer updating the board\
-•	Updater gets a copy of the current board to get differences for printing later, if gets the move depending on which AI is active (or the player move if the player is playing) it plays the move and updates nearby cells (grid_changer), swaps the turn (swap_turn), finds all of the legal moves (legal_moves), finds the differences between the current and old position (difference_finder)\
+•	Updater gets a copy of the current board to get differences for printing later, if gets the move depending on which AI is active (or the player move if the player is playing) it plays the move and updates nearby cells (grid_changer), swaps the turn (swap_turn), finds all of the legal moves (legal_moves), finds the differences between the current and old position (difference_finder)
 
 
 ### Functions:
@@ -124,7 +124,7 @@ Cheater: runs cheater_code()\
 •	legal_moves_of_cell(grid, turn, i, j, board_size) finds whether a specific cell (i,j) has any legal moves, if so it sets it to “v”, returns the new grid\
 •	legal_moves(grid, turn, board_size): uses legal_moves_of_cell to find all of the legal moves of the board returns the new grid\
 •	difference_finder(grid, last_grid, board_size) compares the current and former grid to find any differences, counts the tiles and checks for legal moves returns the number of white tiles, the number of black tiles, the differences(in terms of i) the differences(in terms of j) the new tiles they changes to and whether there are legal moves\
-•	updater(i, j, legal_moves_check): creates a copy of the current board, gets the move as necessary with ai_player, updates the grid with grid_changer, swaps the turn with swap_turn, finds the legal moves of the grid with legal_moves, finds the differences between the new and old grid with difference_finder returns whether there are legal moves, the number of white tiles, the number of black tiles, the move that was played in terms of (i and j), the differences(in terms of i) the differences(in terms of j) the new tiles they changes\
+•	updater(i, j, legal_moves_check): creates a copy of the current board, gets the move as necessary with ai_player, updates the grid with grid_changer, swaps the turn with swap_turn, finds the legal moves of the grid with legal_moves, finds the differences between the new and old grid with difference_finder returns whether there are legal moves, the number of white tiles, the number of black tiles, the move that was played in terms of (i and j), the differences(in terms of i) the differences(in terms of j) the new tiles they changes
 
 
 ## Printing the board (lines 1066-1295):
@@ -142,7 +142,7 @@ Cheater: runs cheater_code()\
 
  
 ## Creating the start game menu (lines 1298-2155) 
-•	The start screen allows the player to decide on which AIs/the player plays purple and yellow and gives stats and descriptions, it also allows the player to select animation lengths, board size and show all AIs with a button and create a pop-up with 7 slides that explains how to play the game.\
+•	The start screen allows the player to decide on which AIs/the player plays purple and yellow and gives stats and descriptions, it also allows the player to select animation lengths, board size and show all AIs with a button and create a pop-up with 7 slides that explains how to play the game.
 
 ### Functions:
 •	start_game(frame_to_destroy): starts the game by clearing the start_screen, setting up variables: animation_timers, ai_turn, grid, grid_last, board_size, initial_settings, with .get(), sets up grid with set_up_grid(), prints the board with print_initially() and plays the 1st move with play_move() never returns\
@@ -177,11 +177,11 @@ the drop-down menu creates a menu that allows the player to pick from a number o
 •	not a function but the window is created with height and width to mostly fill the screen
 •	create_game_frame_list(): creates the global list of frames for the game that are used later. Never returns\
 •	create_game_selection_screen(): this creates the screen for the start of the game where all the settings can be chosen. It runs create_game_frame_list, create_outside_frame_box, create_title, create_player_chooser_boxes, create_animation_box, create_start_game_box, show_all_ai_button, how_to_play_button and never returns\
-•	not a function but: game_frame_list, window_frame_frame, results, animation_slider, board_size_slider, show_play_frame_frame, how_to_play_flag, slide_flag are put in global scope\
+•	not a function but: game_frame_list, window_frame_frame, results, animation_slider, board_size_slider, show_play_frame_frame, how_to_play_flag, slide_flag are put in global scope
 
 ### Other:
 •	The window for all tkinter stuff is created separately and is thus in global scope\
 •	Some global variables are set-up\
 •	Create_game_selection_screen() is ran\
 •	image paths for the how_to_play screen are created and saved\
-•	window_mainloop() is ran to start the programme\
+•	window_mainloop() is ran to start the programme
