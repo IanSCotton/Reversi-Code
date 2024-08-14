@@ -70,27 +70,27 @@ The overall function of the code is to allow the player to play against or watch
 +	**first_move(move_list)** returns the first legal move
 +	**random_move(move_list)** returns a random move
 +	**border_control(move_list)**  plays a move that tries to control the border returns list of best moves
-+	**control_tile_finder(i, j, protected_grid, take, grid)** uses *protected_grid* to determine whether the specific tile(i,j) can be captured on take’s turn or can be played on returns updated protected_grid
-+	**Control_grid_finder(grid)** finds all the tiles on the board that can no longer be captured by the opponent using *control_tile_finder* returns a protected_grid
-+	**border_control _test_2 (move_list)** tries to play on safe tiles as decided by *control_grid_finder* returns list of best moves
++	**control_tile_finder(i, j, protected_grid, take, grid)** uses protected_grid to determine whether the specific tile(i,j) can be captured on take’s turn or can be played on returns updated protected_grid
++	**Control_grid_finder(grid)** finds all the tiles on the board that can no longer be captured by the opponent using *control_tile_finder()* returns a protected_grid
++	**border_control _test_2 (move_list)** tries to play on safe tiles as decided by *control_grid_finder()* returns list of best moves
 +	**opponent_min_or_max(move_list, max_or_min, board_size)** plays the move that either maximises or minimises the number of tiles the current player has returns the first move that maximises or minimises
 +	**create_tree(grid, layers)** part of my method to solve a tree to find the best move, this creates a tree of all positions to a specific layer, each new layer is stored at a higher number in the array it returns the game_tree
 +	**fill_bottom_tree_maximiser(game_tree, layers)** go to the bottom of the game_tree and set a score for each board based on the number of each tile returns the modified game_tree
 +	**solve_tree(game_tree, layers)** solves the tree using a min-max algorithm to find the best move in the initial position returns the best move
 +	**fill_bottom_tree_border(game_tree, layers)** fill the bottom of the game_tree using the border_control method to assign points to each board returns the game tree
-+	**future_border_test(layers)**: uses *create_tree*, fill_bottom_tree_border and solve_tree to create fill and solve the tree to return the best move
++	**future_border_test(layers)**: uses *create_tree()*, *fill_bottom_tree_border()* and *solve_tree()* to create fill and solve the tree to return the best move
 +	**fill_bottom_tree_border_2(game_tree, layers)** fills the bottom of the game_tree with scores based on the protected_move_grids and the number of tiles returns game_tree
-+	**future_border_test_2(layers)**: uses create_tree, fill_bottom_tree_border_2 and solve_tree to create fill and solve the tree to return the best move
++	**future_border_test_2(layers)**: uses *create_tree*, *fill_bottom_tree_border_2()* and *solve_tree()* to create fill and solve the tree to return the best move
 +	**find_score_board_maximiser(grid)** this returns a score for a grid based on the ratio between the number of black and white tiles returns the score
 +	**find_score_border(grid, protected_move_grid)** uses the protected_move_grid, the number of tiles of each colour, a list of bad and very bad tiles to return a score for the board
 +	**class EvaluationGrids(grid, current_depth, turn, target_depth, setting)**: this class contains data for all of the inputted variables as well as the associated protected_move_grid, any grids directly formed from playing moves on the grid and an evaluation of the current position if current_depth=target_depth
-+	**sort_maximiser_moves(evaluation_grid)**: creates list of undergrids for the maximiser function using grid_changer() returns lower_grids, moves_list
++	**sort_maximiser_moves(evaluation_grid)**: creates list of undergrids for the maximiser function using *grid_changer()* returns lower_grids, moves_list
 +	**Sort_moves(evaluation_grid)**: takes an evaluation_grid and orders its moves from best to worst based on how good they are likely to be, starting with moves that would make tiles uncapturable and then based on the number of tiles they take over, returns the under_grid_grids based on playing moves on the under_grids and the sorted_move list
-+	**Evaluation_functions(setting, evaluation_grid)**: decides whether the score should be based on the maximising or border method and uses find_score_board_maximiser or find_score_border to return the score as required
++	**Evaluation_functions(setting, evaluation_grid)**: decides whether the score should be based on the maximising or border method and uses *find_score_board_maximiser()* or *find_score_border()* to return the score as required
 +	**Min_max(evaluation_grid, max_depth, alpha, beta, layers)**: uses a min_max algorithm with alpha beta pruning with recursion to fill out the evaluation_grid evaluations to help the best move returns an evaluation_grid with more evaluations\
 +	**Find_move(evaluation_grid)** after all the layers have been evaluated this returns the first move in the list that has an evaluation equal to the overall evaluation of the current position (the best move)
 +	**Cheater_code(move_list)**: This is complex enough to have its own subsection below, it either plays a random move returning the move or directly modifies the board with one of the functions below returning a pointless move [-2 ,-2]
-        -	**all_placer()**: this places a tile on every square where a legal move could be played returns the modified grid
+        -	**all_placer()**: this places a tile on every square where a legal move (*legal_moves()*) could be played returns the modified grid
         -	**place_square()**: this places a square of size 2-4 somewhere on the board returns the modified grid
         -	**flip_straight()**: this takes a random row or column and flips all of the tiles in it returns the modified grid
         -	**smiley_face(grid, turn)**: this is sometimes played at the start of the game and displays a specific pattern on the board returns the modified grid
