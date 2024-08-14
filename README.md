@@ -20,7 +20,7 @@ The overall function of the code is to allow the player to play against or watch
 •	The player has the choice of either “Play Again” (with the same settings) or going back to the pre-game screen with “New Game” .
 
 ## Overview of the layout:
-# Sections: (all line numbers and lengths are subject to change)
+### Sections: (all line numbers and lengths are subject to change)
 •	Initial setup including imports (lines 1-133)\
 •	Finding AI moves and the AIs choosing moves (lines 136-918)\
 •	Making moves (lines 922-1063)\
