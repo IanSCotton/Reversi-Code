@@ -70,15 +70,15 @@ The overall function of the code is to allow the player to play against or watch
 +	**first_move(move_list)** returns the first legal move
 +	**random_move(move_list)** returns a random move
 +	**border_control(move_list)**  plays a move that tries to control the border returns list of best moves
-+	**control_tile_finder(i, j, protected_grid, take, grid)** uses protected_grid to determine whether the specific tile(i,j) can be captured on take’s turn or can be played on returns updated protected_grid
-+	**Control_grid_finder(grid)** finds all the tiles on the board that can no longer be captured by the opponent using control_tile_finder returns a protected_grid
-+	**border_control _test_2 (move_list)** tries to play on safe tiles as decided by control_grid_finder returns list of best moves
++	**control_tile_finder(i, j, protected_grid, take, grid)** uses *protected_grid* to determine whether the specific tile(i,j) can be captured on take’s turn or can be played on returns updated protected_grid
++	**Control_grid_finder(grid)** finds all the tiles on the board that can no longer be captured by the opponent using *control_tile_finder* returns a protected_grid
++	**border_control _test_2 (move_list)** tries to play on safe tiles as decided by *control_grid_finder* returns list of best moves
 +	**opponent_min_or_max(move_list, max_or_min, board_size)** plays the move that either maximises or minimises the number of tiles the current player has returns the first move that maximises or minimises
 +	**create_tree(grid, layers)** part of my method to solve a tree to find the best move, this creates a tree of all positions to a specific layer, each new layer is stored at a higher number in the array it returns the game_tree
 +	**fill_bottom_tree_maximiser(game_tree, layers)** go to the bottom of the game_tree and set a score for each board based on the number of each tile returns the modified game_tree
 +	**solve_tree(game_tree, layers)** solves the tree using a min-max algorithm to find the best move in the initial position returns the best move
 +	**fill_bottom_tree_border(game_tree, layers)** fill the bottom of the game_tree using the border_control method to assign points to each board returns the game tree
-+	**future_border_test(layers)**: uses create_tree, fill_bottom_tree_border and solve_tree to create fill and solve the tree to return the best move
++	**future_border_test(layers)**: uses *create_tree*, fill_bottom_tree_border and solve_tree to create fill and solve the tree to return the best move
 +	**fill_bottom_tree_border_2(game_tree, layers)** fills the bottom of the game_tree with scores based on the protected_move_grids and the number of tiles returns game_tree
 +	**future_border_test_2(layers)**: uses create_tree, fill_bottom_tree_border_2 and solve_tree to create fill and solve the tree to return the best move
 +	**find_score_board_maximiser(grid)** this returns a score for a grid based on the ratio between the number of black and white tiles returns the score
